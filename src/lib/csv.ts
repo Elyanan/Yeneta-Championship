@@ -1,1 +1,16 @@
-export function csv(rows:unknown[][]) { return '\uFEFF'+rows.map(row=>row.map(v=>{let s=String(v??'');if(/^[\s\u0000-\u001f]*[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';}).join(',')).join('\r\n'); }
+export function csv(rows: unknown[][]) {
+  return (
+    "\uFEFF" +
+    rows
+      .map((row) =>
+        row
+          .map((v) => {
+            let s = String(v ?? "");
+            if (/^[\s\u0000-\u001f]*[=+@-]/.test(s)) s = "'" + s;
+            return '"' + s.replaceAll('"', '""') + '"';
+          })
+          .join(","),
+      )
+      .join("\r\n")
+  );
+}

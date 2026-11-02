@@ -1,0 +1,56 @@
+{
+  "school": "/images/school-logo.webp",
+  "teams": {
+    "grade-12": "/images/invitus.webp",
+    "grade-11": "/images/panthers.webp",
+    "grade-10": "/images/rising-stars.webp"
+  },
+  "unresolved": [
+    {
+      "team": "grade-9",
+      "reason": "No unambiguous image; fallback emblem will be used."
+    }
+  ],
+  "files": [
+    {
+      "filename": "school_logo.jpg",
+      "name": "school_logo",
+      "classCode": "",
+      "grade": null,
+      "school": true,
+      "url": "/images/school-logo.webp",
+      "thumbnail": "/images/school-logo.thumb.webp",
+      "bytes": 30388
+    },
+    {
+      "filename": "Invitus (Seniors).png",
+      "name": "Invitus",
+      "classCode": "",
+      "grade": 12,
+      "school": false,
+      "url": "/images/invitus.webp",
+      "thumbnail": "/images/invitus.thumb.webp",
+      "bytes": 38022
+    },
+    {
+      "filename": "Panthers (Grade 11).png",
+      "name": "Panthers",
+      "classCode": "",
+      "grade": 11,
+      "school": false,
+      "url": "/images/panthers.webp",
+      "thumbnail": "/images/panthers.thumb.webp",
+      "bytes": 86200
+    },
+    {
+      "filename": "Rising Stars (Grade 10).png",
+      "name": "Rising Stars",
+      "classCode": "",
+      "grade": 10,
+      "school": false,
+      "url": "/images/rising-stars.webp",
+      "thumbnail": "/images/rising-stars.thumb.webp",
+      "bytes": 27574
+    }
+  ]
+}
