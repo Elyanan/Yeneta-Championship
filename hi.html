@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeneta Championship Leaderboard & Tournament Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+    <!-- Header Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-11 w-11 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i data-lucide="trophy" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                        Yeneta School Championship
+                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 uppercase tracking-wide">2026-27</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 font-medium hidden sm:block"> High School Ranking </p>
+                </div>
+            </div>
+
+            <!-- Quick Global Actions -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="openMatchModal()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all active:scale-95">
+                    <i data-lucide="swords" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">Record Match</span>
+                </button>
+                <button id="addPlayerHeaderBtn" onclick="openParticipantModal()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-xs transition-all active:scale-95">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">Add Player</span>
+                </button>
+                <div class="relative inline-block text-left">
+                    <button onclick="toggleDataMenu()" id="dataMenuBtn" class="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors">
+                        <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                    </button>
+                    <div id="dataMenuDropdown" class="hidden absolute right-0 mt-2 w-52 rounded-xl bg-white shadow-xl border border-slate-200 py-1.5 z-40">
+                        <button onclick="exportCSV(); toggleDataMenu();" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4 text-slate-500"></i> Export Active Table (CSV)
+                        </button>
+                        <div class="border-t border-slate-100 my-1"></div>
+                        <button onclick="resetToDemoData(); toggleDataMenu();" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-500"></i> Reset Demo Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+        
+        <!-- Tournament Overview Stats Banner -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4 mb-6">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center shrink-0">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span id="stat-label-1" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Athletes</span>
+                    <p id="stat-total-players" class="text-2xl font-bold text-slate-900">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <i data-lucide="flame" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Matches Played</span>
+                    <p id="stat-total-matches" class="text-2xl font-bold text-slate-900">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <i data-lucide="crown" class="w-6 h-6"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <span id="stat-label-leader" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Top Performer</span>
+                    <p id="stat-top-player" class="text-base font-bold text-slate-900 truncate" title="Top Performer">None</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                    <i data-lucide="shield" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span id="stat-label-metric" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Category Average</span>
+                    <p id="stat-avg-rating" class="text-2xl font-bold text-slate-900">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sport Tabs Selector (Chess, Table Tennis, Football, Volleyball) -->
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <div id="sport-tabs-container" class="inline-flex p-1.5 bg-slate-200/70 rounded-2xl gap-1 overflow-x-auto max-w-full">
+                <!-- Dynamically generated sports pills -->
+            </div>
+            
+            <div class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 flex items-center gap-1.5">
+                <span id="sport-type-badge" class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span id="sport-type-text">Individual Sport</span>
+            </div>
+        </div>
+
+        <!-- Filter & Search Toolbar Card -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs mb-6 space-y-4">
+            <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                
+                <!-- Category / Gender Filters -->
+                <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
+                    <button onclick="setCategoryFilter('boys')" id="cat-btn-boys" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-brand-600 shadow-xs transition">👦 Boys Division</button>
+                    <button onclick="setCategoryFilter('girls')" id="cat-btn-girls" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition">👧 Girls Division</button>
+                </div>
+
+                <!-- Grade Selection Pills (Only displayed for individual sports) -->
+                <div id="grade-filter-container" class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                    <span class="text-xs font-medium text-slate-400 mr-1 hidden sm:inline">Grade:</span>
+                    <button onclick="setGradeFilter('all')" id="grade-btn-all" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-brand-50 text-brand-700 border border-brand-200">All</button>
+                    <button onclick="setGradeFilter('9')" id="grade-btn-9" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">Gr 9</button>
+                    <button onclick="setGradeFilter('10')" id="grade-btn-10" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">Gr 10</button>
+                    <button onclick="setGradeFilter('11')" id="grade-btn-11" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">Gr 11</button>
+                    <button onclick="setGradeFilter('12')" id="grade-btn-12" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">Gr 12</button>
+                </div>
+
+                <!-- Search Input & Sort dropdown -->
+                <div id="search-sort-container" class="flex items-center gap-2 flex-1 md:max-w-xs ml-auto">
+                    <div class="relative w-full">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search table..." class="w-full pl-9 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all">
+                    </div>
+                    <select id="sortBySelect" onchange="handleSortChange(this.value)" class="text-xs font-semibold py-2 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-hidden">
+                        <option value="score">Rank (Pts)</option>
+                        <option value="name">Alphabetical</option>
+                        <option value="wins">Wins</option>
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Leaderboard Table Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h2 id="table-display-title" class="text-lg font-bold text-slate-900">Leaderboard</h2>
+                    <p id="table-display-count" class="text-xs text-slate-500">Loading standings...</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openMatchModal()" class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                        <i data-lucide="swords" class="w-3.5 h-3.5 text-emerald-600"></i> Record Match
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead id="leaderboard-table-head">
+                        <!-- Injected dynamic columns -->
+                    </thead>
+                    <tbody id="leaderboard-table-body" class="divide-y divide-slate-100 text-sm">
+                        <!-- Dynamic rendered rows -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden py-14 px-4 text-center">
+                <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 mb-3">
+                    <i data-lucide="inbox" class="w-7 h-7"></i>
+                </div>
+                <h4 class="text-base font-bold text-slate-800 mb-1">No entries found</h4>
+                <p class="text-xs text-slate-500 max-w-sm mx-auto mb-4">No records found matching current sport and filters.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
+        <p>Annual School Sports Championship • Chess, Table Tennis, Football & Volleyball</p>
+    </footer>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- 1. Participant Registration & Edit Modal (Only for Individual Sports: Chess / Table Tennis) -->
+    <div id="participantModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 rounded-lg bg-brand-50 text-brand-600">
+                        <i data-lucide="user-check" class="w-5 h-5"></i>
+                    </div>
+                    <h3 id="participantModalTitle" class="text-base font-bold text-slate-900">Add New Participant</h3>
+                </div>
+                <button onclick="closeParticipantModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="participantForm" onsubmit="handleParticipantSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="editPlayerId" value="">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Athlete Full Name</label>
+                    <input type="text" id="pName" required placeholder="e.g. Ronald Weasley" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-hidden">
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Sport</label>
+                        <select id="pSport" class="w-full px-2.5 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500">
+                            <option value="chess">♟️ Chess</option>
+                            <option value="table-tennis">🏓 Table Tennis</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Division</label>
+                        <select id="pGender" class="w-full px-2.5 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500">
+                            <option value="boys">Boys</option>
+                            <option value="girls">Girls</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Grade</label>
+                        <select id="pGrade" class="w-full px-2.5 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500">
+                            <option value="9">Grade 9</option>
+                            <option value="10">Grade 10</option>
+                            <option value="11">Grade 11</option>
+                            <option value="12">Grade 12</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Rating / Score</label>
+                        <input type="number" id="pScore" required value="1200" min="100" max="3500" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Wins</label>
+                        <input type="number" id="pWins" required value="0" min="0" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Losses</label>
+                        <input type="number" id="pLosses" required value="0" min="0" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeParticipantModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+                    <button type="submit" id="participantSaveBtn" class="px-4 py-2 text-xs font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl shadow-xs transition">Save Athlete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Dual Match Logger Modal (Supports Individual Chess/TT & Grade-vs-Grade Football/Volleyball) -->
+    <div id="matchModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                        <i data-lucide="swords" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900">Record Match Result</h3>
+                </div>
+                <button onclick="closeMatchModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Select Sport</label>
+                        <select id="matchSportSelect" onchange="handleMatchSportChange()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500 font-medium">
+                            <option value="chess">♟️ Chess (Individual)</option>
+                            <option value="table-tennis">🏓 Table Tennis (Individual)</option>
+                            <option value="football">⚽ Football (Grade Team)</option>
+                            <option value="volleyball">🏐 Volleyball (Grade Team)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Division</label>
+                        <select id="matchGenderSelect" onchange="handleMatchSportChange()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500 font-medium">
+                            <option value="boys">Boys Division</option>
+                            <option value="girls">Girls Division</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SECTION A: Team / Grade vs Grade Match Subform (Football & Volleyball) -->
+                <div id="teamMatchSection" class="space-y-4">
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block">Grade Clash</span>
+                        <div class="grid grid-cols-2 gap-3 items-center">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Home Team</label>
+                                <select id="teamGradeHome" class="w-full px-2.5 py-2 text-xs font-bold border border-slate-200 rounded-lg bg-white outline-hidden">
+                                    <option value="9">Grade 9</option>
+                                    <option value="10" selected>Grade 10</option>
+                                    <option value="11">Grade 11</option>
+                                    <option value="12">Grade 12</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Away Team</label>
+                                <select id="teamGradeAway" class="w-full px-2.5 py-2 text-xs font-bold border border-slate-200 rounded-lg bg-white outline-hidden">
+                                    <option value="9">Grade 9</option>
+                                    <option value="10">Grade 10</option>
+                                    <option value="11">Grade 11</option>
+                                    <option value="12" selected>Grade 12</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Score Input for Football (Goals) or Volleyball (Sets) -->
+                        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                            <div>
+                                <label id="homeScoreLabel" class="block text-xs font-semibold text-slate-700 mb-1">Home Goals</label>
+                                <input type="number" id="teamScoreHome" min="0" max="30" value="0" class="w-full px-3 py-2 text-center text-lg font-mono font-bold border border-slate-200 rounded-xl outline-hidden">
+                            </div>
+                            <div>
+                                <label id="awayScoreLabel" class="block text-xs font-semibold text-slate-700 mb-1">Away Goals</label>
+                                <input type="number" id="teamScoreAway" min="0" max="30" value="0" class="w-full px-3 py-2 text-center text-lg font-mono font-bold border border-slate-200 rounded-xl outline-hidden">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="teamRuleExplainer" class="text-[11px] text-slate-500 bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
+                        ⚽ <strong>Football Rules:</strong> Win = 3 PTS, Draw = 1 PT, Loss = 0 PTS. Goals For/Against & Goal Difference auto-update.
+                    </div>
+                </div>
+
+                <!-- SECTION B: Individual Match Subform (Chess & Table Tennis) -->
+                <div id="individualMatchSection" class="space-y-4 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="p-3 rounded-xl border border-blue-200 bg-blue-50/40">
+                            <label class="block text-xs font-bold text-brand-700 mb-1">Athlete 1</label>
+                            <select id="matchPlayer1" class="w-full px-2.5 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-white outline-hidden"></select>
+                        </div>
+                        <div class="p-3 rounded-xl border border-indigo-200 bg-indigo-50/40">
+                            <label class="block text-xs font-bold text-indigo-700 mb-1">Athlete 2</label>
+                            <select id="matchPlayer2" class="w-full px-2.5 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-white outline-hidden"></select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Match Outcome</label>
+                        <select id="matchWinner" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-brand-500 font-semibold">
+                            <option value="player1">Athlete 1 Won</option>
+                            <option value="player2">Athlete 2 Won</option>
+                            <option value="draw">Draw / Stalemate</option>
+                        </select>
+                    </div>
+
+                    <div class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                        ⚡ <strong>Elo Engine:</strong> Ratings dynamically calibrate based on athlete score difference (K=32 factor).
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeMatchModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancel</button>
+                    <button type="button" onclick="submitMatchResult()" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs transition">Apply Match Result</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        const STORAGE_KEY = 'SCHOOL_CHAMPIONSHIP_DATA_V3';
+
+        // Sports definitions: Chess, Table Tennis, Football (Team by Grade), Volleyball (Team by Grade)
+        const DEFAULT_SPORTS = [
+            { id: 'chess', name: 'Chess', icon: '♟️', type: 'individual', metric: 'Rating' },
+            { id: 'table-tennis', name: 'Table Tennis', icon: '🏓', type: 'individual', metric: 'Points' },
+            { id: 'football', name: 'Football (Soccer)', icon: '⚽', type: 'team_grade', metric: 'PTS' },
+            { id: 'volleyball', name: 'Volleyball', icon: '🏐', type: 'team_grade', metric: 'PTS' }
+        ];
+
+        // Seed data for Individual Sports (Chess and Table Tennis)
+        const DEFAULT_PLAYERS = [
+            // Chess - Boys
+            { id: 'p3', name: "Alex Miller", sport: "chess", gender: "boys", grade: 9, score: 0, wins: 0, losses: 2, form: ['L','W','W','W','L'] },
+            { id: 'p4', name: "Marcus Vance", sport: "chess", gender: "boys", grade: 11, score: 0, wins: 0, losses: 3, form: ['L','L','W','W','W'] },
+            { id: 'p5', name: "Ethan Hunt", sport: "chess", gender: "boys", grade: 10, score: 0, wins: 0, losses: 4, form: ['W','L','L','W','L'] },
+
+            // Chess - Girls
+            { id: 'p6', name: "Hermione Granger", sport: "chess", gender: "girls", grade: 12, score: 1780, wins: 11, losses: 0, form: ['W','W','W','W','W'] },
+            { id: 'p7', name: "Chloe Grace", sport: "chess", gender: "girls", grade: 9, score: 1510, wins: 6, losses: 2, form: ['W','W','L','W','W'] },
+            { id: 'p8', name: "Elena Gilbert", sport: "chess", gender: "girls", grade: 11, score: 1420, wins: 5, losses: 2, form: ['W','L','W','W','L'] },
+            { id: 'p9', name: "Mia Davies", sport: "chess", gender: "girls", grade: 10, score: 1350, wins: 3, losses: 4, form: ['L','W','L','L','W'] },
+
+            // Table Tennis - Boys
+            { id: 'p10', name: "Chris Paul", sport: "table-tennis", gender: "boys", grade: 12, score: 1560, wins: 8, losses: 2, form: ['W','W','W','L','W'] },
+            { id: 'p11', name: "Lucas Scott", sport: "table-tennis", gender: "boys", grade: 10, score: 1460, wins: 6, losses: 2, form: ['W','L','W','W','W'] },
+            { id: 'p12', name: "John Doe", sport: "table-tennis", gender: "boys", grade: 9, score: 1390, wins: 5, losses: 3, form: ['L','W','W','L','W'] },
+            { id: 'p13', name: "Nathan Roy", sport: "table-tennis", gender: "boys", grade: 11, score: 1360, wins: 4, losses: 4, form: ['L','L','W','W','L'] },
+
+            // Table Tennis - Girls
+            { id: 'p14', name: "Katniss Everdeen", sport: "table-tennis", gender: "girls", grade: 12, score: 1590, wins: 8, losses: 1, form: ['W','W','W','W','L'] },
+            { id: 'p15', name: "Arya Stark", sport: "table-tennis", gender: "girls", grade: 11, score: 1440, wins: 6, losses: 2, form: ['W','W','L','W','W'] },
+            { id: 'p16', name: "Betty Cooper", sport: "table-tennis", gender: "girls", grade: 10, score: 1330, wins: 4, losses: 3, form: ['L','W','W','L','W'] },
+            { id: 'p17', name: "Sarah Connor", sport: "table-tennis", gender: "girls", grade: 9, score: 1290, wins: 3, losses: 4, form: ['W','L','L','W','L'] }
+        ];
+
+        // Seed data for Grade-Only Team Sports (Football & Volleyball)
+        const DEFAULT_GRADE_TEAMS = {
+            football: {
+                boys: [
+                    { grade: 12, name: "Grade 12 Seniors", played: 4, won: 3, drawn: 1, lost: 0, gf: 9, ga: 3, points: 10, form: ['W','W','D','W'] },
+                    { grade: 11, name: "Grade 11 Juniors", played: 4, won: 2, drawn: 1, lost: 1, gf: 7, ga: 5, points: 7, form: ['W','D','W','L'] },
+                    { grade: 10, name: "Grade 10 Sophomores", played: 4, won: 1, drawn: 1, lost: 2, gf: 4, ga: 6, points: 4, form: ['L','D','L','W'] },
+                    { grade: 9,  name: "Grade 9 Freshmen", played: 4, won: 0, drawn: 1, lost: 3, gf: 2, ga: 8, points: 1, form: ['L','L','D','L'] }
+                ],
+                girls: [
+                    { grade: 11, name: "Grade 11 Juniors", played: 3, won: 2, drawn: 1, lost: 0, gf: 6, ga: 2, points: 7, form: ['W','W','D'] },
+                    { grade: 12, name: "Grade 12 Seniors", played: 3, won: 2, drawn: 0, lost: 1, gf: 5, ga: 3, points: 6, form: ['W','L','W'] },
+                    { grade: 10, name: "Grade 10 Sophomores", played: 3, won: 1, drawn: 0, lost: 2, gf: 3, ga: 5, points: 3, form: ['L','W','L'] },
+                    { grade: 9,  name: "Grade 9 Freshmen", played: 3, won: 0, drawn: 1, lost: 2, gf: 1, ga: 5, points: 1, form: ['D','L','L'] }
+                ]
+            },
+            volleyball: {
+                boys: [
+                    { grade: 12, name: "Grade 12 Seniors", played: 4, won: 4, lost: 0, setsWon: 8, setsLost: 1, points: 8, form: ['W','W','W','W'] },
+                    { grade: 10, name: "Grade 10 Sophomores", played: 4, won: 2, lost: 2, setsWon: 5, setsLost: 5, points: 4, form: ['W','L','W','L'] },
+                    { grade: 11, name: "Grade 11 Juniors", played: 4, won: 2, lost: 2, setsWon: 4, setsLost: 5, points: 4, form: ['L','W','L','W'] },
+                    { grade: 9,  name: "Grade 9 Freshmen", played: 4, won: 0, lost: 4, setsWon: 2, setsLost: 8, points: 0, form: ['L','L','L','L'] }
+                ],
+                girls: [
+                    { grade: 12, name: "Grade 12 Seniors", played: 3, won: 3, lost: 0, setsWon: 6, setsLost: 1, points: 6, form: ['W','W','W'] },
+                    { grade: 10, name: "Grade 10 Sophomores", played: 3, won: 2, lost: 1, setsWon: 4, setsLost: 3, points: 4, form: ['W','W','L'] },
+                    { grade: 11, name: "Grade 11 Juniors", played: 3, won: 1, lost: 2, setsWon: 3, setsLost: 4, points: 2, form: ['L','L','W'] },
+                    { grade: 9,  name: "Grade 9 Freshmen", played: 3, won: 0, lost: 3, setsWon: 1, setsLost: 6, points: 0, form: ['L','L','L'] }
+                ]
+            }
+        };
+        
+        // Application state
+        let appState = {
+            activeSport: 'chess', // 'chess', 'table-tennis', 'football', 'volleyball'
+            categoryFilter: 'boys', // 'boys', 'girls'
+            gradeFilter: 'all',     // 'all', '9', '10', '11', '12' (for individual sports)
+            searchQuery: '',
+            sortBy: 'score',
+            data: null
+        };
+
+        function initApp() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    appState.data = JSON.parse(stored);
+                    // Ensure new sports structure
+                    if (!appState.data.gradeTeams || !appState.data.gradeTeams.football || !appState.data.gradeTeams.volleyball) {
+                        appState.data = getInitialFullData();
+                    }
+                } catch (e) {
+                    console.error("Local storage error:", e);
+                    appState.data = getInitialFullData();
+                }
+            } else {
+                appState.data = getInitialFullData();
+                saveData();
+            }
+
+            renderSportTabs();
+            renderDashboard();
+            lucide.createIcons();
+        }
+
+        function getInitialFullData() {
+            return {
+                sports: DEFAULT_SPORTS,
+                players: JSON.parse(JSON.stringify(DEFAULT_PLAYERS)),
+                gradeTeams: JSON.parse(JSON.stringify(DEFAULT_GRADE_TEAMS))
+            };
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState.data));
+            updateStats();
+        }
+
+        function resetToDemoData() {
+            appState.data = getInitialFullData();
+            saveData();
+            renderSportTabs();
+            renderDashboard();
+            showToast("Tournament reset to demo data", "info");
+        }
+
+        // ================= RENDERING =================
+
+        function renderSportTabs() {
+            const container = document.getElementById('sport-tabs-container');
+            container.innerHTML = '';
+
+            appState.data.sports.forEach(sport => {
+                const isActive = sport.id === appState.activeSport;
+                const btn = document.createElement('button');
+                btn.className = `flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+                    isActive 
+                    ? 'bg-white text-brand-700 shadow-xs ring-1 ring-slate-200/50' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/40'
+                }`;
+                btn.innerHTML = `<span>${sport.icon}</span><span>${sport.name}</span>`;
+                btn.onclick = () => {
+                    appState.activeSport = sport.id;
+                    renderSportTabs();
+                    renderDashboard();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderDashboard() {
+            const currentSportObj = appState.data.sports.find(s => s.id === appState.activeSport) || appState.data.sports[0];
+            const isTeamGrade = currentSportObj.type === 'team_grade';
+
+            // Update badge in top-right
+            const badgeDot = document.getElementById('sport-type-badge');
+            const badgeText = document.getElementById('sport-type-text');
+            const addPlayerHeaderBtn = document.getElementById('addPlayerHeaderBtn');
+            const gradeFilterContainer = document.getElementById('grade-filter-container');
+
+            if (isTeamGrade) {
+                badgeDot.className = "h-2 w-2 rounded-full bg-indigo-500";
+                badgeText.textContent = "Team by Grade Standings";
+                addPlayerHeaderBtn.classList.add('hidden');
+                gradeFilterContainer.classList.add('hidden');
+            } else {
+                badgeDot.className = "h-2 w-2 rounded-full bg-emerald-500";
+                badgeText.textContent = "Individual Athlete Leaderboard";
+                addPlayerHeaderBtn.classList.remove('hidden');
+                gradeFilterContainer.classList.remove('hidden');
+            }
+
+            const catLabel = appState.categoryFilter === 'boys' ? 'Boys Division' : 'Girls Division';
+            const thead = document.getElementById('leaderboard-table-head');
+            const tbody = document.getElementById('leaderboard-table-body');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (isTeamGrade) {
+                // RENDER GRADE-BY-GRADE STANDINGS TABLE
+                document.getElementById('table-display-title').textContent = `${currentSportObj.icon} ${currentSportObj.name} — Inter-Grade Standings (${catLabel})`;
+
+                if (appState.activeSport === 'football') {
+                    thead.innerHTML = `
+                        <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                            <th class="py-3 px-4 text-center w-14">Pos</th>
+                            <th class="py-3 px-4">Grade Squad</th>
+                            <th class="py-3 px-3 text-center">P</th>
+                            <th class="py-3 px-3 text-center">W</th>
+                            <th class="py-3 px-3 text-center">D</th>
+                            <th class="py-3 px-3 text-center">L</th>
+                            <th class="py-3 px-3 text-center">GF</th>
+                            <th class="py-3 px-3 text-center">GA</th>
+                            <th class="py-3 px-3 text-center font-bold">GD</th>
+                            <th class="py-3 px-4 text-center font-extrabold text-brand-600">PTS</th>
+                            <th class="py-3 px-4">Recent Form</th>
+                            <th class="py-3 px-4 text-right">Quick</th>
+                        </tr>
+                    `;
+                } else {
+                    // Volleyball
+                    thead.innerHTML = `
+                        <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                            <th class="py-3 px-4 text-center w-14">Pos</th>
+                            <th class="py-3 px-4">Grade Squad</th>
+                            <th class="py-3 px-3 text-center">Matches</th>
+                            <th class="py-3 px-3 text-center">Won</th>
+                            <th class="py-3 px-3 text-center">Lost</th>
+                            <th class="py-3 px-3 text-center">Sets W</th>
+                            <th class="py-3 px-3 text-center">Sets L</th>
+                            <th class="py-3 px-4 text-center font-extrabold text-brand-600">PTS</th>
+                            <th class="py-3 px-4">Recent Form</th>
+                            <th class="py-3 px-4 text-right">Quick</th>
+                        </tr>
+                    `;
+                }
+
+                let teams = (appState.data.gradeTeams[appState.activeSport] && appState.data.gradeTeams[appState.activeSport][appState.categoryFilter]) || [];
+
+                // Filter by search
+                if (appState.searchQuery.trim() !== '') {
+                    const q = appState.searchQuery.toLowerCase();
+                    teams = teams.filter(t => t.name.toLowerCase().includes(q) || `grade ${t.grade}`.includes(q));
+                }
+
+                // Sort: Points first, then Goal Diff or Sets Won
+                teams.sort((a, b) => {
+                    if (b.points !== a.points) return b.points - a.points;
+                    if (appState.activeSport === 'football') {
+                        const gdA = (a.gf || 0) - (a.ga || 0);
+                        const gdB = (b.gf || 0) - (b.ga || 0);
+                        if (gdB !== gdA) return gdB - gdA;
+                        return (b.gf || 0) - (a.gf || 0);
+                    } else {
+                        return (b.setsWon || 0) - (a.setsWon || 0);
+                    }
+                });
+
+                document.getElementById('table-display-count').textContent = `Showing ${teams.length} Grades in contention`;
+
+                if (teams.length === 0) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    teams.forEach((team, index) => {
+                        tbody.appendChild(createTeamGradeRow(team, index + 1, appState.activeSport));
+                    });
+                }
+
+            } else {
+                // RENDER INDIVIDUAL ATHLETES TABLE (Chess / Table Tennis)
+                const gradeLabel = appState.gradeFilter === 'all' ? 'Grades 9–12' : `Grade ${appState.gradeFilter}`;
+                document.getElementById('table-display-title').textContent = `${currentSportObj.icon} ${currentSportObj.name} — ${catLabel} (${gradeLabel})`;
+
+                thead.innerHTML = `
+                    <tr class="bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                        <th class="py-3 px-4 text-center w-14">Rank</th>
+                        <th class="py-3 px-4">Athlete</th>
+                        <th class="py-3 px-4">Grade & Division</th>
+                        <th class="py-3 px-4">${currentSportObj.metric}</th>
+                        <th class="py-3 px-4">Record (W-L)</th>
+                        <th class="py-3 px-4">Win Rate</th>
+                        <th class="py-3 px-4">Recent Form</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                `;
+
+                let players = appState.data.players.filter(p => p.sport === appState.activeSport && p.gender === appState.categoryFilter);
+
+                if (appState.gradeFilter !== 'all') {
+                    players = players.filter(p => p.grade.toString() === appState.gradeFilter);
+                }
+
+                if (appState.searchQuery.trim() !== '') {
+                    const q = appState.searchQuery.toLowerCase();
+                    players = players.filter(p => p.name.toLowerCase().includes(q));
+                }
+
+                players.sort((a, b) => {
+                    if (appState.sortBy === 'score') return b.score - a.score;
+                    if (appState.sortBy === 'name') return a.name.localeCompare(b.name);
+                    if (appState.sortBy === 'wins') return b.wins - a.wins;
+                    return b.score - a.score;
+                });
+
+                document.getElementById('table-display-count').textContent = `Showing ${players.length} registered athlete${players.length === 1 ? '' : 's'}`;
+
+                if (players.length === 0) {
+                    emptyState.classList.remove('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    players.forEach((player, index) => {
+                        tbody.appendChild(createIndividualRow(player, index + 1));
+                    });
+                }
+            }
+
+            updateStats();
+            lucide.createIcons();
+        }
+
+        // ================= ROW CREATION =================
+
+        function createTeamGradeRow(team, rank, sport) {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/80 transition-colors group";
+
+            let rankBadge = `<span class="font-bold text-slate-500">${rank}</span>`;
+            if (rank === 1) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 font-extrabold text-xs">🥇</span>`;
+            if (rank === 2) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-extrabold text-xs">🥈</span>`;
+            if (rank === 3) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-800/10 text-amber-900 font-extrabold text-xs">🥉</span>`;
+
+            const gd = (team.gf || 0) - (team.ga || 0);
+            const gdFormatted = gd > 0 ? `+${gd}` : `${gd}`;
+
+            // Form badges
+            let formBadges = '';
+            if (team.form && Array.isArray(team.form)) {
+                formBadges = team.form.slice(-5).map(res => {
+                    if (res === 'W') return `<span class="w-4 h-4 rounded text-[9px] font-bold inline-flex items-center justify-center bg-emerald-100 text-emerald-800">W</span>`;
+                    if (res === 'D') return `<span class="w-4 h-4 rounded text-[9px] font-bold inline-flex items-center justify-center bg-amber-100 text-amber-800">D</span>`;
+                    return `<span class="w-4 h-4 rounded text-[9px] font-bold inline-flex items-center justify-center bg-rose-100 text-rose-800">L</span>`;
+                }).join('');
+            } else {
+                formBadges = `<span class="text-xs text-slate-400">-</span>`;
+            }
+
+            if (sport === 'football') {
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 text-center">${rankBadge}</td>
+                    <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs">
+                                G${team.grade}
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-900">${team.name}</span>
+                                <span class="text-[11px] text-slate-400 block">${appState.categoryFilter === 'boys' ? 'Boys Squad' : 'Girls Squad'}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center text-slate-600 font-medium">${team.played}</td>
+                    <td class="py-3.5 px-3 text-center text-emerald-600 font-semibold">${team.won}</td>
+                    <td class="py-3.5 px-3 text-center text-amber-600 font-semibold">${team.drawn}</td>
+                    <td class="py-3.5 px-3 text-center text-rose-600 font-semibold">${team.lost}</td>
+                    <td class="py-3.5 px-3 text-center text-slate-600">${team.gf}</td>
+                    <td class="py-3.5 px-3 text-center text-slate-600">${team.ga}</td>
+                    <td class="py-3.5 px-3 text-center font-bold ${gd > 0 ? 'text-emerald-600' : (gd < 0 ? 'text-rose-600' : 'text-slate-500')}">${gdFormatted}</td>
+                    <td class="py-3.5 px-4 text-center font-extrabold text-base text-brand-600">${team.points}</td>
+                    <td class="py-3.5 px-4"><div class="flex items-center gap-1">${formBadges}</div></td>
+                    <td class="py-3.5 px-4 text-right">
+                        <button onclick="quickTeamPoint(${team.grade}, 3)" title="Add +3 Points (Win)" class="p-1 rounded-md text-emerald-600 hover:bg-emerald-50">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+            } else {
+                // Volleyball
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 text-center">${rankBadge}</td>
+                    <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs">
+                                G${team.grade}
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-900">${team.name}</span>
+                                <span class="text-[11px] text-slate-400 block">${appState.categoryFilter === 'boys' ? 'Boys Squad' : 'Girls Squad'}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center text-slate-600 font-medium">${team.played}</td>
+                    <td class="py-3.5 px-3 text-center text-emerald-600 font-semibold">${team.won}</td>
+                    <td class="py-3.5 px-3 text-center text-rose-600 font-semibold">${team.lost}</td>
+                    <td class="py-3.5 px-3 text-center text-slate-600">${team.setsWon}</td>
+                    <td class="py-3.5 px-3 text-center text-slate-600">${team.setsLost}</td>
+                    <td class="py-3.5 px-4 text-center font-extrabold text-base text-brand-600">${team.points}</td>
+                    <td class="py-3.5 px-4"><div class="flex items-center gap-1">${formBadges}</div></td>
+                    <td class="py-3.5 px-4 text-right">
+                        <button onclick="quickTeamPoint(${team.grade}, 2)" title="Add +2 Points (Win)" class="p-1 rounded-md text-emerald-600 hover:bg-emerald-50">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+            }
+
+            return tr;
+        }
+
+        function createIndividualRow(player, rank) {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/80 transition-colors group";
+
+            let rankBadge = `<span class="font-bold text-slate-500">${rank}</span>`;
+            if (rank === 1) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 font-extrabold text-xs">🥇</span>`;
+            if (rank === 2) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-extrabold text-xs">🥈</span>`;
+            if (rank === 3) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-800/10 text-amber-900 font-extrabold text-xs">🥉</span>`;
+
+            const initials = player.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+            const totalGames = player.wins + player.losses;
+            const winRate = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0;
+
+            let formBadges = '';
+            if (player.form && Array.isArray(player.form)) {
+                formBadges = player.form.slice(-5).map(res => {
+                    return res === 'W' 
+                        ? `<span class="w-4 h-4 rounded text-[9px] font-bold inline-flex items-center justify-center bg-emerald-100 text-emerald-800">W</span>`
+                        : `<span class="w-4 h-4 rounded text-[9px] font-bold inline-flex items-center justify-center bg-rose-100 text-rose-800">L</span>`;
+                }).join('');
+            } else {
+                formBadges = `<span class="text-xs text-slate-400">-</span>`;
+            }
+
+            tr.innerHTML = `
+                <td class="py-3 px-4 text-center">${rankBadge}</td>
+                <td class="py-3 px-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center text-xs font-bold">
+                            ${initials}
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-900 block group-hover:text-brand-600 transition-colors">${escapeHtml(player.name)}</span>
+                            <span class="text-[11px] text-slate-400">ID: ${player.id}</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-700 rounded-md">Grade ${player.grade}</span>
+                </td>
+                <td class="py-3 px-4 font-extrabold text-slate-900 font-mono">${player.score}</td>
+                <td class="py-3 px-4 text-xs">
+                    <span class="font-bold text-emerald-600">${player.wins}W</span>
+                    <span class="text-slate-300 mx-1">/</span>
+                    <span class="font-bold text-rose-600">${player.losses}L</span>
+                </td>
+                <td class="py-3 px-4">
+                    <div class="w-20">
+                        <span class="text-[11px] font-semibold text-slate-600">${winRate}%</span>
+                        <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-0.5">
+                            <div class="h-full ${winRate >= 60 ? 'bg-emerald-500' : 'bg-brand-500'} rounded-full" style="width: ${winRate}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-3 px-4"><div class="flex items-center gap-1">${formBadges}</div></td>
+                <td class="py-3 px-4 text-right">
+                    <div class="flex items-center justify-end gap-1">
+                        <button onclick="quickSoloWin('${player.id}')" title="Quick Win (+25 pts)" class="p-1 rounded-md text-emerald-600 hover:bg-emerald-50">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="openParticipantModal('${player.id}')" title="Edit Athlete" class="p-1 rounded-md text-slate-500 hover:bg-slate-100">
+                            <i data-lucide="edit-2" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deletePlayer('${player.id}')" title="Delete Athlete" class="p-1 rounded-md text-rose-400 hover:bg-rose-50">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            return tr;
+        }
+
+        function updateStats() {
+            const currentSportObj = appState.data.sports.find(s => s.id === appState.activeSport) || appState.data.sports[0];
+            const isTeamGrade = currentSportObj.type === 'team_grade';
+
+            const label1 = document.getElementById('stat-label-1');
+            const total1 = document.getElementById('stat-total-players');
+            const totalMatches = document.getElementById('stat-total-matches');
+            const labelLeader = document.getElementById('stat-label-leader');
+            const topLeader = document.getElementById('stat-top-player');
+            const labelMetric = document.getElementById('stat-label-metric');
+            const avgRating = document.getElementById('stat-avg-rating');
+
+            if (isTeamGrade) {
+                const teams = (appState.data.gradeTeams[appState.activeSport] && appState.data.gradeTeams[appState.activeSport][appState.categoryFilter]) || [];
+                label1.textContent = "Grades in Division";
+                total1.textContent = teams.length;
+
+                const matchesSum = teams.reduce((acc, t) => acc + (t.played || 0), 0) / 2;
+                totalMatches.textContent = Math.floor(matchesSum);
+
+                labelLeader.textContent = "Division Leader";
+                if (teams.length > 0) {
+                    const sorted = [...teams].sort((a,b) => b.points - a.points);
+                    topLeader.textContent = `${sorted[0].name} (${sorted[0].points} PTS)`;
+                } else {
+                    topLeader.textContent = "None";
+                }
+
+                labelMetric.textContent = "Avg Grade Points";
+                if (teams.length > 0) {
+                    const avg = (teams.reduce((acc, t) => acc + t.points, 0) / teams.length).toFixed(1);
+                    avgRating.textContent = avg;
+                } else {
+                    avgRating.textContent = "0";
+                }
+
+            } else {
+                const players = appState.data.players;
+                const currentSportPlayers = players.filter(p => p.sport === appState.activeSport && p.gender === appState.categoryFilter);
+
+                label1.textContent = "Total Athletes";
+                total1.textContent = currentSportPlayers.length;
+
+                const totalWins = currentSportPlayers.reduce((sum, p) => sum + p.wins, 0);
+                totalMatches.textContent = totalWins;
+
+                labelLeader.textContent = "Tournament MVP";
+                if (currentSportPlayers.length > 0) {
+                    const sorted = [...currentSportPlayers].sort((a,b) => b.score - a.score);
+                    topLeader.textContent = `${sorted[0].name} (${sorted[0].score})`;
+                    const avg = Math.round(currentSportPlayers.reduce((sum, p) => sum + p.score, 0) / currentSportPlayers.length);
+                    labelMetric.textContent = "Average Rating";
+                    avgRating.textContent = avg;
+                } else {
+                    topLeader.textContent = 'None';
+                    avgRating.textContent = '0';
+                }
+            }
+        }
+
+        // ================= FILTERS =================
+
+        function setCategoryFilter(gender) {
+            appState.categoryFilter = gender;
+            const boysBtn = document.getElementById('cat-btn-boys');
+            const girlsBtn = document.getElementById('cat-btn-girls');
+
+            if (gender === 'boys') {
+                boysBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-brand-600 shadow-xs transition";
+                girlsBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+            } else {
+                girlsBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-brand-600 shadow-xs transition";
+                boysBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition";
+            }
+            renderDashboard();
+        }
+
+        function setGradeFilter(grade) {
+            appState.gradeFilter = grade;
+            ['all', '9', '10', '11', '12'].forEach(g => {
+                const btn = document.getElementById(`grade-btn-${g}`);
+                if (g === grade) {
+                    btn.className = "px-2.5 py-1 text-xs font-semibold rounded-lg bg-brand-50 text-brand-700 border border-brand-200";
+                } else {
+                    btn.className = "px-2.5 py-1 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100";
+                }
+            });
+            renderDashboard();
+        }
+
+        function handleSearch(val) {
+            appState.searchQuery = val;
+            renderDashboard();
+        }
+
+        function handleSortChange(val) {
+            appState.sortBy = val;
+            renderDashboard();
+        }
+
+        function toggleDataMenu() {
+            const dropdown = document.getElementById('dataMenuDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // ================= PARTICIPANT CRUD (Chess / TT) =================
+
+        function openParticipantModal(playerId = null) {
+            const modal = document.getElementById('participantModal');
+            const form = document.getElementById('participantForm');
+            const title = document.getElementById('participantModalTitle');
+            const editId = document.getElementById('editPlayerId');
+
+            form.reset();
+            // Default to current sport if individual, else chess
+            const curSport = (appState.activeSport === 'chess' || appState.activeSport === 'table-tennis') ? appState.activeSport : 'chess';
+            document.getElementById('pSport').value = curSport;
+            document.getElementById('pGender').value = appState.categoryFilter;
+
+            if (playerId) {
+                const p = appState.data.players.find(x => x.id === playerId);
+                if (p) {
+                    title.textContent = 'Edit Athlete Details';
+                    editId.value = p.id;
+                    document.getElementById('pName').value = p.name;
+                    document.getElementById('pSport').value = p.sport;
+                    document.getElementById('pGender').value = p.gender;
+                    document.getElementById('pGrade').value = p.grade;
+                    document.getElementById('pScore').value = p.score;
+                    document.getElementById('pWins').value = p.wins;
+                    document.getElementById('pLosses').value = p.losses;
+                }
+            } else {
+                title.textContent = 'Register New Athlete';
+                editId.value = '';
+                document.getElementById('pScore').value = 1200;
+                document.getElementById('pWins').value = 0;
+                document.getElementById('pLosses').value = 0;
+            }
+
+            modal.classList.remove('hidden');
+            document.getElementById('pName').focus();
+            lucide.createIcons();
+        }
+
+        function closeParticipantModal() {
+            document.getElementById('participantModal').classList.add('hidden');
+        }
+
+        function handleParticipantSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editPlayerId').value;
+            const name = document.getElementById('pName').value.trim();
+            const sport = document.getElementById('pSport').value;
+            const gender = document.getElementById('pGender').value;
+            const grade = parseInt(document.getElementById('pGrade').value);
+            const score = parseInt(document.getElementById('pScore').value);
+            const wins = parseInt(document.getElementById('pWins').value);
+            const losses = parseInt(document.getElementById('pLosses').value);
+
+            if (!name) return;
+
+            if (editId) {
+                const pIndex = appState.data.players.findIndex(p => p.id === editId);
+                if (pIndex !== -1) {
+                    appState.data.players[pIndex] = {
+                        ...appState.data.players[pIndex],
+                        name, sport, gender, grade, score, wins, losses
+                    };
+                    showToast(`Updated athlete ${name}`, "success");
+                }
+            } else {
+                const newPlayer = {
+                    id: 'p_' + Date.now().toString(36),
+                    name, sport, gender, grade, score, wins, losses,
+                    form: []
+                };
+                appState.data.players.push(newPlayer);
+                showToast(`Registered ${name} to ${sport === 'chess' ? 'Chess' : 'Table Tennis'}`, "success");
+            }
+
+            appState.activeSport = sport;
+            appState.categoryFilter = gender;
+            renderSportTabs();
+            setCategoryFilter(gender);
+            saveData();
+            renderDashboard();
+            closeParticipantModal();
+        }
+
+        function deletePlayer(id) {
+            const player = appState.data.players.find(p => p.id === id);
+            if (!player) return;
+
+            if (confirm(`Remove ${player.name} from championship?`)) {
+                appState.data.players = appState.data.players.filter(p => p.id !== id);
+                saveData();
+                renderDashboard();
+                showToast(`${player.name} removed`, "info");
+            }
+        }
+
+        function quickSoloWin(playerId) {
+            const player = appState.data.players.find(p => p.id === playerId);
+            if (!player) return;
+            player.wins += 1;
+            player.score += 25;
+            if (!player.form) player.form = [];
+            player.form.push('W');
+            saveData();
+            renderDashboard();
+            showToast(`+1 Win recorded for ${player.name} (+25 pts)`, "success");
+        }
+
+        function quickTeamPoint(grade, pts) {
+            const teams = appState.data.gradeTeams[appState.activeSport][appState.categoryFilter];
+            const team = teams.find(t => t.grade === grade);
+            if (!team) return;
+
+            team.won += 1;
+            team.played += 1;
+            team.points += pts;
+            if (!team.form) team.form = [];
+            team.form.push('W');
+            saveData();
+            renderDashboard();
+            showToast(`Recorded Victory for Grade ${grade} (+${pts} PTS)`, "success");
+        }
+
+        // ================= MATCH LOGGER ENGINE =================
+
+        function openMatchModal() {
+            document.getElementById('matchSportSelect').value = appState.activeSport;
+            document.getElementById('matchGenderSelect').value = appState.categoryFilter;
+            handleMatchSportChange();
+            document.getElementById('matchModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeMatchModal() {
+            document.getElementById('matchModal').classList.add('hidden');
+        }
+
+        function handleMatchSportChange() {
+            const sport = document.getElementById('matchSportSelect').value;
+            const gender = document.getElementById('matchGenderSelect').value;
+            const currentSportObj = appState.data.sports.find(s => s.id === sport);
+
+            const teamSection = document.getElementById('teamMatchSection');
+            const individualSection = document.getElementById('individualMatchSection');
+            const homeScoreLabel = document.getElementById('homeScoreLabel');
+            const awayScoreLabel = document.getElementById('awayScoreLabel');
+            const ruleExplainer = document.getElementById('teamRuleExplainer');
+
+            if (currentSportObj.type === 'team_grade') {
+                teamSection.classList.remove('hidden');
+                individualSection.classList.add('hidden');
+
+                if (sport === 'football') {
+                    homeScoreLabel.textContent = "Home Goals";
+                    awayScoreLabel.textContent = "Away Goals";
+                    ruleExplainer.innerHTML = `⚽ <strong>Football Rules:</strong> Win = 3 PTS, Draw = 1 PT, Loss = 0 PTS. Automatically computes Goal Difference (GF/GA).`;
+                } else {
+                    homeScoreLabel.textContent = "Home Sets Won";
+                    awayScoreLabel.textContent = "Away Sets Won";
+                    ruleExplainer.innerHTML = `🏐 <strong>Volleyball Rules:</strong> Winner gets 2 PTS, Loser gets 0 PTS. Sets Won & Lost dynamically tallied.`;
+                }
+            } else {
+                teamSection.classList.add('hidden');
+                individualSection.classList.remove('hidden');
+
+                // Populate athletes for individual match
+                const players = appState.data.players.filter(p => p.sport === sport && p.gender === gender);
+                const p1Select = document.getElementById('matchPlayer1');
+                const p2Select = document.getElementById('matchPlayer2');
+                p1Select.innerHTML = '';
+                p2Select.innerHTML = '';
+
+                if (players.length === 0) {
+                    p1Select.innerHTML = `<option value="">No athletes registered</option>`;
+                    p2Select.innerHTML = `<option value="">No athletes registered</option>`;
+                } else {
+                    players.forEach((p, idx) => {
+                        const opt1 = `<option value="${p.id}" ${idx === 0 ? 'selected' : ''}>${p.name} (Gr ${p.grade} - ${p.score} pts)</option>`;
+                        const opt2 = `<option value="${p.id}" ${idx === 1 ? 'selected' : ''}>${p.name} (Gr ${p.grade} - ${p.score} pts)</option>`;
+                        p1Select.innerHTML += opt1;
+                        p2Select.innerHTML += opt2;
+                    });
+                }
+            }
+        }
+
+        function calculateElo(ratingA, ratingB, actualScoreA, kFactor = 32) {
+            const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+            const expectedB = 1 - expectedA;
+            const actualScoreB = 1 - actualScoreA;
+
+            const newRatingA = Math.round(ratingA + kFactor * (actualScoreA - expectedA));
+            const newRatingB = Math.round(ratingB + kFactor * (actualScoreB - expectedB));
+            return [newRatingA, newRatingB];
+        }
+
+        function submitMatchResult() {
+            const sport = document.getElementById('matchSportSelect').value;
+            const gender = document.getElementById('matchGenderSelect').value;
+            const currentSportObj = appState.data.sports.find(s => s.id === sport);
+
+            if (currentSportObj.type === 'team_grade') {
+                const homeGrade = parseInt(document.getElementById('teamGradeHome').value);
+                const awayGrade = parseInt(document.getElementById('teamGradeAway').value);
+                const homeScore = parseInt(document.getElementById('teamScoreHome').value) || 0;
+                const awayScore = parseInt(document.getElementById('teamScoreAway').value) || 0;
+
+                if (homeGrade === awayGrade) {
+                    showToast("Please choose two different Grade teams", "error");
+                    return;
+                }
+
+                const teams = appState.data.gradeTeams[sport][gender];
+                let homeTeam = teams.find(t => t.grade === homeGrade);
+                let awayTeam = teams.find(t => t.grade === awayGrade);
+
+                if (!homeTeam || !awayTeam) {
+                    showToast("Grade team error", "error");
+                    return;
+                }
+
+                if (!homeTeam.form) homeTeam.form = [];
+                if (!awayTeam.form) awayTeam.form = [];
+
+                homeTeam.played += 1;
+                awayTeam.played += 1;
+
+                if (sport === 'football') {
+                    homeTeam.gf = (homeTeam.gf || 0) + homeScore;
+                    homeTeam.ga = (homeTeam.ga || 0) + awayScore;
+                    awayTeam.gf = (awayTeam.gf || 0) + awayScore;
+                    awayTeam.ga = (awayTeam.ga || 0) + homeScore;
+
+                    if (homeScore > awayScore) {
+                        homeTeam.won += 1;
+                        homeTeam.points += 3;
+                        homeTeam.form.push('W');
+                        awayTeam.lost += 1;
+                        awayTeam.form.push('L');
+                        showToast(`Grade ${homeGrade} won against Grade ${awayGrade} (${homeScore}-${awayScore})`, "success");
+                    } else if (awayScore > homeScore) {
+                        awayTeam.won += 1;
+                        awayTeam.points += 3;
+                        awayTeam.form.push('W');
+                        homeTeam.lost += 1;
+                        homeTeam.form.push('L');
+                        showToast(`Grade ${awayGrade} won against Grade ${homeGrade} (${awayScore}-${homeScore})`, "success");
+                    } else {
+                        homeTeam.drawn = (homeTeam.drawn || 0) + 1;
+                        awayTeam.drawn = (awayTeam.drawn || 0) + 1;
+                        homeTeam.points += 1;
+                        awayTeam.points += 1;
+                        homeTeam.form.push('D');
+                        awayTeam.form.push('D');
+                        showToast(`Draw recorded between Grade ${homeGrade} and Grade ${awayGrade} (${homeScore}-${awayScore})`, "info");
+                    }
+                } else {
+                    // Volleyball
+                    homeTeam.setsWon = (homeTeam.setsWon || 0) + homeScore;
+                    homeTeam.setsLost = (homeTeam.setsLost || 0) + awayScore;
+                    awayTeam.setsWon = (awayTeam.setsWon || 0) + awayScore;
+                    awayTeam.setsLost = (awayTeam.setsLost || 0) + homeScore;
+
+                    if (homeScore > awayScore) {
+                        homeTeam.won += 1;
+                        homeTeam.points += 2;
+                        homeTeam.form.push('W');
+                        awayTeam.lost += 1;
+                        awayTeam.form.push('L');
+                        showToast(`Grade ${homeGrade} defeated Grade ${awayGrade} (${homeScore}-${awayScore} sets)`, "success");
+                    } else {
+                        awayTeam.won += 1;
+                        awayTeam.points += 2;
+                        awayTeam.form.push('W');
+                        homeTeam.lost += 1;
+                        homeTeam.form.push('L');
+                        showToast(`Grade ${awayGrade} defeated Grade ${homeGrade} (${awayScore}-${homeScore} sets)`, "success");
+                    }
+                }
+
+            } else {
+                // Individual Sport (Chess / TT)
+                const p1Id = document.getElementById('matchPlayer1').value;
+                const p2Id = document.getElementById('matchPlayer2').value;
+                const winnerOutcome = document.getElementById('matchWinner').value;
+
+                if (!p1Id || !p2Id || p1Id === p2Id) {
+                    showToast("Please choose two different athletes", "error");
+                    return;
+                }
+
+                const player1 = appState.data.players.find(p => p.id === p1Id);
+                const player2 = appState.data.players.find(p => p.id === p2Id);
+
+                if (!player1 || !player2) return;
+
+                if (!player1.form) player1.form = [];
+                if (!player2.form) player2.form = [];
+
+                let scoreA = 0.5;
+                if (winnerOutcome === 'player1') {
+                    scoreA = 1.0;
+                    player1.wins += 1;
+                    player2.losses += 1;
+                    player1.form.push('W');
+                    player2.form.push('L');
+                } else if (winnerOutcome === 'player2') {
+                    scoreA = 0.0;
+                    player2.wins += 1;
+                    player1.losses += 1;
+                    player2.form.push('W');
+                    player1.form.push('L');
+                } else {
+                    scoreA = 0.5;
+                    player1.form.push('D');
+                    player2.form.push('D');
+                }
+
+                const [newA, newB] = calculateElo(player1.score, player2.score, scoreA);
+                player1.score = Math.max(100, newA);
+                player2.score = Math.max(100, newB);
+
+                showToast(`Match registered: ${player1.name} vs ${player2.name}`, "success");
+            }
+
+            appState.activeSport = sport;
+            appState.categoryFilter = gender;
+            renderSportTabs();
+            setCategoryFilter(gender);
+            saveData();
+            renderDashboard();
+            closeMatchModal();
+        }
+
+        // ================= CSV EXPORT =================
+
+        function exportCSV() {
+            const currentSportObj = appState.data.sports.find(s => s.id === appState.activeSport);
+            let csvRows = [];
+
+            if (currentSportObj.type === 'team_grade') {
+                const teams = appState.data.gradeTeams[appState.activeSport][appState.categoryFilter] || [];
+                if (teams.length === 0) {
+                    showToast("No team records to export", "info");
+                    return;
+                }
+
+                if (appState.activeSport === 'football') {
+                    csvRows.push(["Position", "Grade", "Squad_Name", "Played", "Won", "Drawn", "Lost", "GF", "GA", "GD", "Points"]);
+                    teams.sort((a,b) => b.points - a.points).forEach((t, i) => {
+                        const gd = (t.gf || 0) - (t.ga || 0);
+                        csvRows.push([i+1, t.grade, `"${t.name}"`, t.played, t.won, t.drawn, t.lost, t.gf, t.ga, gd, t.points]);
+                    });
+                } else {
+                    csvRows.push(["Position", "Grade", "Squad_Name", "Matches_Played", "Won", "Lost", "Sets_Won", "Sets_Lost", "Points"]);
+                    teams.sort((a,b) => b.points - a.points).forEach((t, i) => {
+                        csvRows.push([i+1, t.grade, `"${t.name}"`, t.played, t.won, t.lost, t.setsWon, t.setsLost, t.points]);
+                    });
+                }
+            } else {
+                const players = appState.data.players.filter(p => p.sport === appState.activeSport && p.gender === appState.categoryFilter);
+                if (players.length === 0) {
+                    showToast("No athletes to export", "info");
+                    return;
+                }
+
+                csvRows.push(["Rank", "Athlete_Name", "Grade", "Division", "Rating_or_Points", "Wins", "Losses", "WinRatePct"]);
+                players.sort((a,b) => b.score - a.score).forEach((p, idx) => {
+                    const total = p.wins + p.losses;
+                    const winRate = total > 0 ? Math.round((p.wins / total) * 100) : 0;
+                    csvRows.push([idx+1, `"${p.name}"`, p.grade, p.gender, p.score, p.wins, p.losses, `${winRate}%`]);
+                });
+            }
+
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `championship_${appState.activeSport}_${appState.categoryFilter}_standings.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("CSV exported successfully", "success");
+        }
+
+        // ================= UTILITIES =================
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-900 text-white';
+            let iconName = 'info';
+
+            if (type === 'success') {
+                bg = 'bg-emerald-600 text-white';
+                iconName = 'check-circle-2';
+            } else if (type === 'error') {
+                bg = 'bg-rose-600 text-white';
+                iconName = 'alert-triangle';
+            }
+
+            toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-semibold ${bg} transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
+            toast.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i> <span>${escapeHtml(message)}</span>`;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        window.onload = function() {
+            initApp();
+        };
+    </script>
+</body>
+</html>
