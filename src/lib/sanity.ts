@@ -23,7 +23,7 @@ export function sanity(write = false) {
     useCdn: false,
     token: write
       ? process.env.SANITY_API_WRITE_TOKEN
-      : process.env.SANITY_API_READ_TOKEN,
+      : process.env.SANITY_API_READ_TOKEN || process.env.SANITY_API_WRITE_TOKEN,
     perspective: "published",
   });
 }

@@ -17,7 +17,7 @@ npm run dev
 Open `http://127.0.0.1:3000`. Without Sanity configuration, the public site displays the configured classes and honest empty results. Writes and administrator login require configured Sanity access and administrator credentials. There is no insecure local-storage or in-memory persistence fallback.
 
 ```powershell
-Copy-Item .env.example .env.local
+if (!(Test-Path .env.local)) { New-Item -ItemType File .env.local }
 ```
 
 Restart Next.js after editing environment variables.
@@ -25,11 +25,11 @@ Restart Next.js after editing environment variables.
 ## Connect Sanity
 
 1. Create a project in [Sanity Manage](https://www.sanity.io/manage).
-2. Create a **private** dataset named `production`. Using a private dataset is essential: championship, session, and login-throttle documents share it.
+2. Create a dataset named `production`. A private dataset is recommended when available. This app also supports public datasets by storing championship, session and throttle documents under restricted paths (IDs containing a period). Run `npm run backend:check` to verify anonymous access is denied.
 3. Create a Viewer read token and an Editor write token. Restrict access to the project and dataset as your Sanity plan permits. Do not put either token in browser code.
 4. Fill in the server environment variables below.
 5. Run `npm run assets`, then `npm run seed`. The seed uses `createIfNotExists` and never overwrites an existing championship.
-6. Start the application and sign in at `/admin` using your configured username and password.
+6. Run `npm run backend:check`, start the application and sign in at `/admin` using your configured username and password.
 
 Sanity schemas are in `src/sanity/schemas.ts`, with Studio configuration in `sanity.config.ts`. The custom admin writes directly through authenticated server routes; a hosted Studio is optional. To inspect the schema in Studio, export the nonsecret project/dataset configuration into the shell and run `npx sanity dev`. Studio requires a Sanity-account login, separate from the custom application's admin login. Studio's championship view is deliberately read-only; use `/admin` to preserve cross-record validation and concurrency protection. The Content Lake API does not enforce Studio schema rules, so server-side Zod and domain validation remain authoritative.
 
@@ -39,15 +39,15 @@ Sanity schemas are in `src/sanity/schemas.ts`, with Studio configuration in `san
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `APP_ORIGIN`             | Exact public origin, e.g. `http://127.0.0.1:3000` locally or your HTTPS domain in production; no trailing slash. Required in production for origin checks and canonical metadata. |
 | `SANITY_PROJECT_ID`      | Sanity project identifier.                                                                                                                                                        |
-| `SANITY_DATASET`         | Private dataset, normally `production`.                                                                                                                                           |
+| `SANITY_DATASET`         | Dataset name, normally `production`.                                                                                                                                              |
 | `SANITY_API_VERSION`     | Fixed API date; example `2026-11-01`.                                                                                                                                             |
-| `SANITY_API_READ_TOKEN`  | Server-only Viewer token; required for a private dataset.                                                                                                                         |
+| `SANITY_API_READ_TOKEN`  | Optional server-only Viewer token. Server reads use the existing write token when this is absent.                                                                                 |
 | `SANITY_API_WRITE_TOKEN` | Server-only Editor token for mutations, images, sessions and throttling.                                                                                                          |
 | `ADMIN_USERNAME`         | Custom administrator username.                                                                                                                                                    |
 | `ADMIN_PASSWORD_HASH`    | Salted scrypt hash generated below. Never use a plaintext password.                                                                                                               |
-| `AUTH_SESSION_SECRET`    | Cryptographically random secret of at least 32 characters.                                                                                                                        |
+| `ADMIN_SESSION_SECRET`   | Random secret of at least 32 characters. `AUTH_SESSION_SECRET` remains a compatibility alias.                                                                                     |
 
-None of these variables use `NEXT_PUBLIC_`. Set them as deployment secrets. `.env.local` is ignored by Git. The supplied example contains no credentials.
+None of these variables use `NEXT_PUBLIC_`. Set them as deployment secrets. `.env.local` is ignored by Git. Keep credentials out of tracked files.
 
 ### Generate the password hash
 
@@ -58,10 +58,10 @@ $adminCredential = Get-Credential -UserName 'championship-admin' -Message 'Choos
 $adminCredential.GetNetworkCredential().Password | node scripts/password.mjs
 ```
 
-Copy the returned `scrypt$...` value into `.env.local` using **single quotes** to preserve the dollar signs:
+Copy the returned colon-delimited hash into `.env.local`. Colons avoid Next.js expanding parts of the hash as environment variables:
 
 ```dotenv
-ADMIN_PASSWORD_HASH='scrypt$<salt>$<derived-key>'
+ADMIN_PASSWORD_HASH='scrypt:<salt>:<derived-key>'
 ```
 
 Generate the session secret:
@@ -117,7 +117,7 @@ Open `/admin/settings` to add an academic season and change the publicly selecte
 
 `src/lib/statistics.ts` contains pure calculation functions. Football standings use points, goal difference, goals scored, then name and stable ID for a deterministic tie. Volleyball uses points, sets won, then name/ID. Recent form is the last five chronological results. Goal and assist rankings exclude own goals. Individual sports replay Elo from starting ratings, chronological date then stable match ID, using K=32, rounding each update and a minimum rating of 100. Draws are recorded explicitly; win percentage uses all played matches, including draws.
 
-The private Sanity document `championship.current` holds typed season/class/athlete/match arrays, settings and the most recent 100 audit entries. This deliberate aggregate boundary allows a single revision-guarded atomic write to validate references and prevent race conditions across rosters and matches. IDs inside this aggregate are stable application references, validated against the complete state; they are not cross-document Sanity references. Sanity array `_key` and `_type` metadata is added on persistence. Session and login-throttle documents are separate. No credentials are stored in the championship payload.
+The access-restricted Sanity document `championship.current` holds typed season/class/athlete/match arrays, settings and the most recent 100 audit entries. This deliberate aggregate boundary allows a single revision-guarded atomic write to validate references and prevent race conditions across rosters and matches. IDs inside this aggregate are stable application references, validated against the complete state; they are not cross-document Sanity references. Sanity array `_key` and `_type` metadata is added on persistence. Session and login-throttle documents are separate. No credentials are stored in the championship payload. All application documents use non-root IDs (`championship.current`, `session.<random-id>`, `security.admin-login`), which Sanity excludes from anonymous reads even in a public dataset. Keep these prefixes intact.
 
 This is intended for a school-scale championship. The API caps imports and validates aggregate sizes; for much larger installations, split aggregates by season with equivalent transactional integrity controls before approaching Sanity document-size limits. This implementation favors auditable consistency over independently mutable point totals.
 
@@ -144,13 +144,13 @@ npm run build
 
 Unit tests exercise standings, tie breaks, scorer/assist attribution, own goals, chronology, individual Elo, edits/deletions, archival integrity, schema validation, import previews, CSV safety and asset mapping. Server integration tests exercise the actual route handlers against an isolated mocked Sanity client, including authentication, revocation, rate limiting, authorization, persistence, revision conflicts and invalidation. Test identities never enter the application seed.
 
-Live Sanity integration requires your real project and tokens. After configuration, verify one class/athlete creation, image upload, roster import, result recording and correction in a nonproduction dataset, then verify public refresh, logout and rejected unauthorized requests. No live dataset was available during initial development.
+Run `npm run backend:check` to verify the live connection and anonymous-access denial without exposing credentials. The server integration tests use an isolated mocked Sanity client. Live login, protected reads, logout, class saving and an existing class-logo upload have also been verified against the configured project. No invented athletes or matches were added.
 
 ## Deployment
 
 Deploy to a Node.js-compatible Next.js host (for example a Next.js deployment on Vercel) using `npm ci` and `npm run build`. Set all environment variables using the host's encrypted secret configuration, set `APP_ORIGIN` to the exact HTTPS domain, initialize the private dataset once, and use HTTPS for Secure production cookies. `npm start` runs the production server on loopback for a reverse proxy; adjust host binding deliberately for your deployment platform if necessary. Do not deploy the original `hi.html` as an independent public management interface.
 
-Do not run the seed against another project by mistake; it is additive only, but each dataset should be selected explicitly. Keep Sanity project access restricted, rotate leaked tokens and session secrets, and retain dataset backups. Application logout revokes a specific session; rotating `AUTH_SESSION_SECRET` invalidates all signed sessions. Changes to admin credentials should be paired with session-secret rotation when existing sessions must be invalidated.
+Do not run the seed against another project by mistake; it is additive only, but each dataset should be selected explicitly. Keep Sanity project access restricted, rotate leaked tokens and session secrets, and retain dataset backups. Application logout revokes a specific session; rotating `ADMIN_SESSION_SECRET` invalidates all signed sessions. Changes to admin credentials should be paired with session-secret rotation when existing sessions must be invalidated.
 
 The `sanity.config.ts` Studio view and schema are provided for inspection and maintenance, not as an unauthenticated write path. No deployment or external dataset has been created automatically.
 
@@ -171,3 +171,17 @@ The `sanity.config.ts` Studio view and schema are provided for inspection and ma
 | `tests`                 | Pure unit tests and isolated server integration tests.                                              |
 
 Primary implementation references: [Next.js App Router installation](https://nextjs.org/docs/app/getting-started/installation), [Sanity conditional mutations](https://www.sanity.io/docs/apis-and-sdks/js-client-mutations), and [Sanity transactions](https://www.sanity.io/docs/apis-and-sdks/js-client-transactions).
+
+## Troubleshooting the connection
+
+Use the Sanity project ID, not an organization ID. Run `npm run backend:check` after configuring `.env.local`. The additive seed can be rerun after a timeout; it never overwrites an existing championship.
+
+Set `APP_ORIGIN` to the exact browser origin, including the local port. Use the generated colon-delimited password hash: Next.js expands unescaped dollar signs even in quoted values. Legacy dollar-delimited hashes still verify if their dollar signs are escaped in the environment file. Login uses a fresh navigation to `/admin` to discard cached unauthenticated redirects.
+
+Content tokens may lack permission to change dataset visibility or create tokens. Runtime needs content read/write access only. A dedicated Viewer token is preferable when available; the read fallback keeps the existing write token on the server. See [Sanity document path access rules](https://www.sanity.io/docs/content-lake/ids).
+
+### Local origin checks
+
+During development, `localhost`, `127.0.0.1` and `[::1]` are accepted as loopback aliases when the source and actual request target use the same protocol and port. This applies to login, logout, uploads and all admin mutations. Sessions remain scoped to the hostname where you signed in, so continue using that address while administering the championship.
+
+Configured origins are normalized for whitespace, a trailing slash and default ports. Production accepts only the configured `APP_ORIGIN` (or `NEXT_PUBLIC_SITE_URL` when `APP_ORIGIN` is absent); it does not implicitly allow local aliases. Missing, opaque (`null`), foreign and malformed origins are rejected. Forwarding headers do not add trusted origins.

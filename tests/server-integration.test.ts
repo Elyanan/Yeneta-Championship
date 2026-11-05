@@ -121,6 +121,29 @@ beforeEach(async () => {
   });
 });
 describe("server authorization and persistent operations", () => {
+  it("supports login, protected writes and logout through the local hostname alias", async () => {
+    process.env.APP_ORIGIN = "http://127.0.0.1:3000";
+    const response = await login(
+      post("/api/auth/login", {
+        username: "test-admin",
+        password: "test-password-very-long",
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect((await read()).status).toBe(200);
+    const save = await write(
+      post("/api/admin", {
+        revision: "1",
+        operation: {
+          kind: "team",
+          value: { ...fixture().teams[0], name: "Updated class" },
+        },
+      }),
+    );
+    expect(save.status).toBe(200);
+    expect((await logout(post("/api/auth/logout", {}))).status).toBe(200);
+    expect((await read()).status).toBe(401);
+  });
   it("optimizes authenticated image uploads before persisting them", async () => {
     await authenticate();
     const source = await sharp({

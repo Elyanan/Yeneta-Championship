@@ -16,4 +16,4 @@ if (password.length < 12 || password.length > 256) {
 }
 const salt = randomBytes(16).toString("hex"),
   key = await promisify(scrypt)(password, salt, 64);
-console.log(`scrypt$${salt}$${key.toString("hex")}`);
+console.log(`scrypt:${salt}:${key.toString("hex")}`);

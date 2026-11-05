@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { randomBytes } from "node:crypto";
 import { sanity, isConfigured } from "./sanity";
 import { signSession, verifySession } from "./auth-core";
+import { isTrustedRequestOrigin } from "./request-origin";
 export class HttpError extends Error {
   constructor(
     public status: number,
@@ -23,10 +24,13 @@ export const cookieOptions = {
   maxAge: 8 * 60 * 60,
 };
 export function checkOrigin(request: Request) {
-  const expected =
-    process.env.APP_ORIGIN ||
-    (process.env.NODE_ENV === "production" ? "" : new URL(request.url).origin);
-  if (!expected || request.headers.get("origin") !== expected)
+  if (
+    !isTrustedRequestOrigin(request, {
+      appOrigin: process.env.APP_ORIGIN,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      production: process.env.NODE_ENV === "production",
+    })
+  )
     throw new HttpError(403, "Request origin is not allowed.");
 }
 export async function session() {

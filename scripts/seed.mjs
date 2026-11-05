@@ -20,13 +20,13 @@ for (const team of payload.teams) team.logo = assets.teams[team.id] || "";
 const existing = await client.getDocument("championship.current");
 if (existing) {
   console.log("Championship already exists. Nothing was changed.");
-  process.exit(0);
+} else {
+  await client.createIfNotExists({
+    _id: "championship.current",
+    _type: "championship",
+    payload: storageShape(payload),
+  });
+  console.log(
+    "Initialized classes and season. Zero athletes and zero matches. Existing data is never overwritten.",
+  );
 }
-await client.createIfNotExists({
-  _id: "championship.current",
-  _type: "championship",
-  payload: storageShape(payload),
-});
-console.log(
-  "Initialized classes and season. Zero athletes and zero matches. Existing data is never overwritten.",
-);
