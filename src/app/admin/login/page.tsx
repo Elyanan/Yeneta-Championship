@@ -2,7 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { session } from "@/lib/auth";
 import { LoginForm } from "@/components/admin/login";
-import { Header, Footer } from "@/components/layout";
+import { Footer } from "@/components/layout";
 export const metadata = {
   title: "Administrator sign in",
   robots: { index: false, follow: false },
@@ -12,7 +12,6 @@ export default async function Login() {
   if (await session()) redirect("/admin");
   return (
     <>
-      <Header />
       <main id="main" className="login-shell">
         <div className="login-brand">
           <Image

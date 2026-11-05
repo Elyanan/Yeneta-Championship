@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { session } from "@/lib/auth";
 import { readSnapshot } from "@/lib/sanity";
-import { Header, Footer } from "@/components/layout";
+import { Footer } from "@/components/layout";
 import { AdminDashboard } from "@/components/admin/dashboard";
 export const metadata = {
   title: "Championship administration",
@@ -32,13 +32,6 @@ export default async function Admin({
   const snapshot = await readSnapshot();
   return (
     <>
-      <Header
-        season={
-          snapshot.data.seasons.find(
-            (s) => s.id === snapshot.data.settings.activeSeasonId,
-          )?.academicYear
-        }
-      />
       <main id="main" className="page-container">
         <AdminDashboard snapshot={snapshot} section={page} />
       </main>
