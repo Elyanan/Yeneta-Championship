@@ -33,7 +33,6 @@ export default async function Admin({
   return (
     <>
       <Header
-        admin
         season={
           snapshot.data.seasons.find(
             (s) => s.id === snapshot.data.settings.activeSeasonId,

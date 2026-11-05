@@ -217,29 +217,6 @@ small {
   padding: 32px 48px 60px;
   margin: auto;
 }
-.hero {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  background: var(--nav);
-  border-radius: 7px;
-  overflow: hidden;
-  color: #fff;
-  min-height: 440px;
-}
-.hero-content {
-  padding: 43px 48px;
-  z-index: 1;
-}
-.hero-kicker {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.6px;
-  color: #d4dfd6;
-}
 .status-dot {
   height: 6px;
   width: 6px;
@@ -247,27 +224,6 @@ small {
   background: #acd579;
   display: inline-block;
   box-shadow: 0 0 0 4px #aacb8220;
-}
-.hero h1 {
-  font-family: Impact, "Arial Narrow", Arial, sans-serif;
-  letter-spacing: -1px;
-  font-weight: 800;
-  font-size: 70px;
-  line-height: 0.97;
-  margin: 25px 0 20px;
-}
-.hero h1 span {
-  color: var(--accent);
-}
-.hero-content > p {
-  font-weight: 700;
-  font-size: 15px;
-  margin-bottom: 6px;
-}
-.hero-description {
-  font-size: 12px;
-  line-height: 1.8;
-  color: #c0cec4;
 }
 .button {
   display: inline-flex;
@@ -288,14 +244,6 @@ small {
 .button-primary:hover {
   filter: brightness(1.1);
 }
-.hero-button {
-  background: var(--accent);
-  color: #163c25;
-  margin-top: 23px;
-}
-.hero-button:hover {
-  background: #e0ffab;
-}
 .button-outline {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -312,103 +260,10 @@ small {
   background: #a7333e;
   color: white;
 }
-.hero-art {
-  position: relative;
-  overflow: hidden;
-  background: radial-gradient(ellipse at 60% 60%, #3b674438, transparent 70%);
-}
-.hero-year {
-  position: absolute;
-  right: 27px;
-  top: 16px;
-  font-size: 95px;
-  font-family: Impact, "Arial Narrow", sans-serif;
-  font-weight: bold;
-  letter-spacing: -6px;
-  color: #b3d3b815;
-  line-height: 1;
-}
-.hero-year span {
-  font-size: 60px;
-  color: #c8ee8326;
-}
-.hero-trophy {
-  position: absolute;
-  width: 230px;
-  height: 265px;
-  left: 50%;
-  top: 49%;
-  transform: translate(-50%, -50%) rotate(-8deg);
-  color: #c9e6ac;
-  filter: drop-shadow(0 12px 30px #b7e78919);
-}
-.pitch-lines {
-  position: absolute;
-  inset: 45px 0 20px 5px;
-  border: 1px solid #91ad8724;
-  transform: perspective(600px) rotateY(-18deg) rotateZ(-12deg) scale(1.15);
-}
-.pitch-lines:before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 1px;
-  background: #91ad8733;
-}
-.pitch-lines div {
-  position: absolute;
-  width: 150px;
-  height: 150px;
-  border: 1px solid #91ad8733;
-  border-radius: 50%;
-  left: calc(50% - 75px);
-  top: calc(50% - 75px);
-}
-.pitch-lines i,
-.pitch-lines b {
-  position: absolute;
-  border: 1px solid #91ad8733;
-  width: 52%;
-  height: 22%;
-  left: 24%;
-}
-.pitch-lines i {
-  top: 0;
-}
-.pitch-lines b {
-  bottom: 0;
-}
-.hero-art-caption {
-  position: absolute;
-  bottom: 35px;
-  left: 25%;
-  display: grid;
-  gap: 4px;
-}
-.hero-art-caption span {
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: #b8cdab;
-}
-.hero-art-caption b {
-  font-size: 19px;
-  letter-spacing: -0.5px;
-}
-.hero-sport-mark {
-  position: absolute;
-  right: 19px;
-  bottom: 35px;
-  writing-mode: vertical-rl;
-  font-size: 8px;
-  letter-spacing: 2px;
-  color: #a7bdab;
-}
 .overview-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin: 28px 0 48px;
+  margin: 0 0 48px;
   border-bottom: 1px solid var(--line);
   padding-bottom: 27px;
   gap: 25px;
@@ -597,16 +452,31 @@ select {
   font-size: 11px;
   min-height: 34px;
 }
-.table-scroll {
-  overflow-x: auto;
-  max-width: 100%;
+.standings-panel,
+.standings-table-wrap {
+  min-width: 0;
+  width: 100%;
 }
 .standings-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 11px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
+}
+.standings-table .rank-column {
+  width: 6%;
+}
+.standings-table .identity-column {
+  width: 30%;
+}
+.standings-table .form-column {
+  width: 18%;
+}
+.column-label-compact {
+  display: none;
 }
 .standings-table th {
   font-size: 9px;
@@ -614,7 +484,7 @@ select {
   color: var(--muted);
   text-align: center;
   background: var(--surface-2);
-  padding: 12px 7px;
+  padding: 12px 4px;
   font-weight: 600;
   border-block: 1px solid var(--line);
 }
@@ -626,21 +496,17 @@ abbr {
   text-align: left;
 }
 .standings-table td {
-  padding: 20px 7px;
+  padding: 20px 4px;
   text-align: center;
   border-bottom: 1px solid var(--line);
 }
 .standings-table td:first-child,
 .standings-table th:first-child {
-  padding-left: 20px;
-  padding-right: 14px;
+  padding-inline: 4px;
 }
 .standings-table td:nth-child(2) {
   text-align: left;
-  min-width: 154px;
-}
-.standings-table td:last-child {
-  padding-right: 20px;
+  padding-inline: 8px;
 }
 .standings-table tr:last-child td {
   border-bottom: 0;
@@ -655,13 +521,21 @@ abbr {
   color: var(--muted);
   font-size: 11px;
   font-weight: 650;
+  white-space: nowrap;
 }
 .table-team {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+.table-team > span:last-child {
+  min-width: 0;
+  flex: 1;
 }
 .table-team b {
+  display: block;
   font-size: 12px;
   font-weight: 650;
 }
@@ -688,14 +562,18 @@ abbr {
   font-size: 13px;
 }
 .form-dots {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 3px;
-  justify-content: center;
+  width: 100%;
+  max-width: 100px;
+  margin-inline: auto;
 }
 .form-dots span {
   display: grid;
   place-items: center;
-  width: 16px;
+  width: 100%;
+  min-width: 0;
   height: 19px;
   font-size: 8px;
   font-weight: 700;
@@ -1633,17 +1511,6 @@ abbr {
     opacity: 1;
   }
 }
-@media (min-width: 1500px) {
-  .hero {
-    min-height: 470px;
-  }
-  .hero h1 {
-    font-size: 78px;
-  }
-  .hero-content {
-    padding-top: 45px;
-  }
-}
 @media (max-width: 1150px) {
   .header-inner {
     padding: 0 28px;
@@ -1660,24 +1527,9 @@ abbr {
   .header-actions {
     gap: 15px;
   }
-  .hero-content {
-    padding: 36px;
-  }
-  .hero h1 {
-    font-size: 64px;
-  }
   .competition-grid {
     grid-template-columns: minmax(0, 1fr) 260px;
     gap: 18px;
-  }
-  .standings-table td {
-    padding: 19px 6px;
-  }
-  .standings-table td:nth-child(2) {
-    min-width: 140px;
-  }
-  .form-dots span {
-    width: 13px;
   }
   .team-card {
     padding: 20px 18px 0;
@@ -1726,18 +1578,6 @@ abbr {
   .competition-note {
     margin-top: 0;
     align-items: center;
-  }
-  .hero h1 {
-    font-size: 57px;
-  }
-  .hero-trophy {
-    width: 190px;
-  }
-  .hero-content {
-    padding: 33px;
-  }
-  .hero-art-caption {
-    left: 13%;
   }
   .team-grid {
     gap: 12px;
@@ -1825,58 +1665,10 @@ abbr {
   .page-container {
     padding: 20px 18px 35px;
   }
-  .hero {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-  .hero-content {
-    padding: 31px 26px 33px;
-  }
-  .hero-kicker {
-    font-size: 8px;
-    letter-spacing: 1.1px;
-  }
-  .hero h1 {
-    font-size: 59px;
-    letter-spacing: -1.5px;
-    position: relative;
-    z-index: 1;
-    margin: 24px 0 22px;
-  }
-  .hero-content > p {
-    font-size: 13px;
-  }
-  .hero-description {
-    font-size: 11px;
-    max-width: 250px;
-  }
-  .hero-art {
-    position: absolute;
-    right: -78px;
-    top: 25px;
-    width: 255px;
-    height: 275px;
-    opacity: 0.22;
-    pointer-events: none;
-  }
-  .hero-year,
-  .hero-art-caption,
-  .hero-sport-mark {
-    display: none;
-  }
-  .hero-trophy {
-    width: 180px;
-    height: 220px;
-  }
-  .hero-button {
-    font-size: 11px;
-    padding: 12px 17px;
-    margin-top: 23px;
-  }
   .overview-strip {
     grid-template-columns: 1fr 1fr;
     gap: 22px 18px;
-    margin: 24px 0 34px;
+    margin: 0 0 34px;
     padding-bottom: 25px;
   }
   .overview-stat {
@@ -1912,10 +1704,13 @@ abbr {
     display: none;
   }
   .sport-tabs {
-    gap: 9px;
+    flex-wrap: wrap;
+    gap: 0;
     margin-bottom: 20px;
   }
   .sport-tabs button {
+    flex: 0 0 50%;
+    justify-content: center;
     font-size: 11px;
     padding: 12px 8px 15px;
     gap: 6px;
@@ -1954,52 +1749,111 @@ abbr {
     min-height: 28px;
   }
   .standings-table {
-    min-width: 620px;
+    font-size: 10px;
+  }
+  .standings-table .rank-column {
+    width: 7%;
+  }
+  .standings-table .identity-column {
+    width: 29%;
+  }
+  .standings-table .form-column {
+    width: 20%;
   }
   .standings-table th {
     font-size: 8px;
-    padding: 10px 7px;
+    letter-spacing: 0;
+    padding: 10px 1px;
   }
   .standings-table td {
-    padding: 18px 7px;
+    padding: 14px 1px;
   }
   .standings-table td:first-child,
   .standings-table th:first-child {
-    padding-left: 16px;
+    padding-inline: 1px;
   }
   .standings-table td:nth-child(2) {
-    position: sticky;
-    left: 0;
-    background: var(--surface);
-    z-index: 1;
-    min-width: 145px;
+    padding-inline: 4px;
   }
-  .standings-table th:nth-child(2) {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: var(--surface-2);
+  .standings-table .points {
+    font-size: 10px;
+    padding: 3px 2px;
+  }
+  .rank-number {
+    font-size: 10px;
+  }
+  .column-label-full {
+    display: none;
+  }
+  .column-label-compact {
+    display: inline;
+    font-size: 7.5px;
+    white-space: nowrap;
+  }
+  .standings-panel .table-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 10px;
+  }
+  .standings-panel .segmented {
+    width: fit-content;
+  }
+  .standings-panel .segmented button {
+    min-height: 34px;
+  }
+  .standings-panel .table-filters {
+    min-width: 0;
+    width: 100%;
+  }
+  .standings-panel .table-filters:has(select[aria-label="Filter grade"]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .standings-panel
+    .table-filters:has(select[aria-label="Filter grade"])
+    .search-box {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .standings-panel .search-box {
+    min-width: 0;
+    flex: 1;
+    max-width: none;
+    min-height: 36px;
+  }
+  .standings-panel .table-filters select {
+    min-height: 36px;
+  }
+  .standings-table .form-dots {
+    gap: 2px;
+  }
+  .standings-table .form-dots span {
+    height: 16px;
+    font-size: 8px;
+    border-radius: 2px;
   }
   .table-team {
-    gap: 7px;
+    gap: 5px;
   }
   .table-team b {
-    font-size: 11px;
+    font-size: 10px;
+    line-height: 1.4;
   }
   .table-team .team-badge,
-  .table-team .team-badge img {
-    width: 31px !important;
-    height: 31px !important;
+  .table-team .team-badge img,
+  .table-team .avatar,
+  .table-team .avatar img {
+    width: 22px !important;
+    height: 22px !important;
   }
   .table-team small {
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 1.5;
   }
   .table-foot {
     padding: 13px 16px;
     font-size: 8px;
-  }
-  .form-dots span {
-    width: 15px;
   }
   .results-panel {
     display: block;

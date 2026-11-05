@@ -3,7 +3,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  ArrowRight,
   ArrowUpRight,
   Trophy,
   Users,
@@ -53,6 +52,11 @@ export function ChampionshipView({
       (a) => a.active && teams.some((t) => t.id === a.teamId),
     );
   const isTeam = sport === "football" || sport === "volleyball";
+  const tableColumns = isTeam
+    ? sport === "football"
+      ? ["P", "W", "D", "L", "GD", "PTS", "FORM"]
+      : ["P", "W", "L", "SW", "SL", "PTS", "FORM"]
+    : ["RATING", "W", "D", "L", "WIN %", "FORM"];
   const teamRows = standings(d, sport, division)
     .map((r, i) => ({ ...r, rank: i + 1 }))
     .filter((r) =>
@@ -79,46 +83,7 @@ export function ChampionshipView({
   }
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="hero-kicker">
-            <span className="status-dot" /> YENETA ACADEMY ·{" "}
-            {season.academicYear}
-          </div>
-          <h1>
-            THE GAME.
-            <br />
-            THE GLORY.
-            <br />
-            <span>OUR SCHOOL.</span>
-          </h1>
-          <p>Yeneta School Championship</p>
-          <div className="hero-description">
-            Four sports. One community. Follow every result,
-            <br className="desktop-only" /> celebrate every athlete, and stand
-            behind your class.
-          </div>
-          <a href="#competition" className="button hero-button">
-            Explore the championship <ArrowRight size={17} />
-          </a>
-        </div>
-        <div className="hero-art" aria-hidden="true">
-          <div className="pitch-lines">
-            <div />
-            <i />
-            <b />
-          </div>
-          <div className="hero-year">
-            26<span>/</span>27
-          </div>
-          <Trophy className="hero-trophy" strokeWidth={0.8} />
-          <div className="hero-art-caption">
-            <span>THE NEXT CHAPTER</span>
-            <b>Greatness starts here.</b>
-          </div>
-          <div className="hero-sport-mark">YSC / OFFICIAL COMPETITION</div>
-        </div>
-      </section>
+      <h1 className="sr-only">Yeneta School Championship</h1>
       {error && (
         <div className="notice error" role="alert">
           {error} <button onClick={() => location.reload()}>Retry</button>
@@ -312,33 +277,32 @@ export function ChampionshipView({
                       </select>
                     </div>
                   </div>
-                  <div className="table-scroll">
+                  <div className="standings-table-wrap">
                     <table className="standings-table">
                       <caption className="sr-only">
                         {sportNames[sport]} {division} standings
                       </caption>
+                      <colgroup>
+                        <col className="rank-column" />
+                        <col className="identity-column" />
+                        {tableColumns.map((column) => (
+                          <col
+                            key={column}
+                            className={
+                              column === "FORM"
+                                ? "form-column"
+                                : "metric-column"
+                            }
+                          />
+                        ))}
+                      </colgroup>
                       <thead>
                         <tr>
                           <th scope="col">#</th>
                           <th scope="col" className="name-col">
                             {isTeam ? "TEAM" : "ATHLETE"}
                           </th>
-                          {(isTeam
-                            ? sport === "football"
-                              ? [
-                                  "P",
-                                  "W",
-                                  "D",
-                                  "L",
-                                  "GF",
-                                  "GA",
-                                  "GD",
-                                  "PTS",
-                                  "FORM",
-                                ]
-                              : ["P", "W", "L", "SW", "SL", "PTS", "FORM"]
-                            : ["RATING", "W", "D", "L", "WIN %", "FORM"]
-                          ).map((v) => (
+                          {tableColumns.map((v) => (
                             <th scope="col" key={v}>
                               <abbr
                                 title={
@@ -348,18 +312,29 @@ export function ChampionshipView({
                                       W: "Won",
                                       D: "Drawn",
                                       L: "Lost",
-                                      GF: "Goals for",
-                                      GA: "Goals against",
                                       GD: "Goal difference",
                                       PTS: "Points",
                                       SW: "Sets won",
                                       SL: "Sets lost",
                                       FORM: "Last five matches",
+                                      RATING: "Elo rating",
+                                      "WIN %": "Win percentage",
                                     } as Record<string, string>
                                   )[v] || v
                                 }
                               >
-                                {v}
+                                {v === "RATING" || v === "WIN %" ? (
+                                  <>
+                                    <span className="column-label-full">
+                                      {v}
+                                    </span>
+                                    <span className="column-label-compact">
+                                      {v === "RATING" ? "RTG" : "WIN%"}
+                                    </span>
+                                  </>
+                                ) : (
+                                  v
+                                )}
                               </abbr>
                             </th>
                           ))}
@@ -401,8 +376,9 @@ export function ChampionshipView({
                                   r.won,
                                   ...(sport === "football" ? [r.drawn] : []),
                                   r.lost,
-                                  r.gf,
-                                  r.ga,
+                                  ...(sport === "volleyball"
+                                    ? [r.gf, r.ga]
+                                    : []),
                                   ...(sport === "football" ? [r.gd] : []),
                                 ].map((v, i) => (
                                   <td key={i}>{v}</td>

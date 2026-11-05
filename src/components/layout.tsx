@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { Monitor, Moon, Sun, ArrowUpRight } from "lucide-react";
@@ -32,13 +33,8 @@ export function ThemeSelector() {
     </div>
   );
 }
-export function Header({
-  season = "2026–27",
-  admin = false,
-}: {
-  season?: string;
-  admin?: boolean;
-}) {
+export function Header({ season = "2026–27" }: { season?: string }) {
+  const pathname = usePathname();
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -55,11 +51,25 @@ export function Header({
           </span>
         </Link>
         <nav className="desktop-nav" aria-label="Main navigation">
-          <Link href="/" className={!admin ? "nav-current" : ""}>
-            Championship
-          </Link>
-          <Link href="/teams">The teams</Link>
-          <Link href="/matches">Match centre</Link>
+          {[
+            { href: "/", label: "Championship" },
+            { href: "/teams", label: "The teams" },
+            { href: "/matches", label: "Match centre" },
+          ].map(({ href, label }) => {
+            const active =
+              pathname === href ||
+              (href !== "/" && pathname.startsWith(`${href}/`));
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={active ? "nav-current" : undefined}
+                aria-current={active ? "page" : undefined}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="header-actions">
           <span className="season-tag">SEASON {season}</span>

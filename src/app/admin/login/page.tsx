@@ -12,7 +12,7 @@ export default async function Login() {
   if (await session()) redirect("/admin");
   return (
     <>
-      <Header admin />
+      <Header />
       <main id="main" className="login-shell">
         <div className="login-brand">
           <Image
