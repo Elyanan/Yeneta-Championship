@@ -127,6 +127,55 @@ describe("server validation and archival integrity", () => {
     expect(d.matches[0].goals[0].scorerId).toBe("a");
     expect(() => validateState(d)).not.toThrow();
   });
+  it("deletes an unreferenced athlete without changing other records", () => {
+    const d = fixture();
+    d.matches = [match()];
+    const next = applyOperation(d, { kind: "delete-athlete", id: "d" });
+    expect(next.athletes).toEqual(d.athletes.filter((a) => a.id !== "d"));
+    expect(next.matches).toEqual(d.matches);
+    expect(d.athletes.some((a) => a.id === "d")).toBe(true);
+    expect(next.audit[0].message).toBe("Athlete deleted");
+  });
+  it("can delete an archived athlete without history", () => {
+    const d = applyOperation(fixture(), { kind: "archive-athlete", id: "a" });
+    expect(
+      applyOperation(d, { kind: "delete-athlete", id: "a" }).athletes.some(
+        (a) => a.id === "a",
+      ),
+    ).toBe(false);
+  });
+  it("rejects deletion of an unknown athlete", () => {
+    expect(() =>
+      applyOperation(fixture(), { kind: "delete-athlete", id: "missing" }),
+    ).toThrow("Athlete not found");
+  });
+  it.each(["a", "b"])("preserves scorer and assister history for %s", (id) => {
+    const d = fixture();
+    d.matches = [match()];
+    expect(() => applyOperation(d, { kind: "delete-athlete", id })).toThrow(
+      "Archive the athlete",
+    );
+  });
+  it.each(["chess", "table-tennis"] as const)(
+    "preserves both participants in %s matches, including void matches",
+    (sport) => {
+      const d = fixture();
+      d.matches = [
+        match({
+          sport,
+          homeId: "a",
+          awayId: "c",
+          homeScore: 0,
+          goals: [],
+          status: "void",
+        }),
+      ];
+      for (const id of ["a", "c"])
+        expect(() => applyOperation(d, { kind: "delete-athlete", id })).toThrow(
+          "Archive the athlete",
+        );
+    },
+  );
   it("prevents moving a historical scorer to an incompatible class", () => {
     const d = fixture();
     d.matches = [match()];

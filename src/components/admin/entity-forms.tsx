@@ -232,31 +232,17 @@ export function AthleteForm({
           </label>
         ))}
       </div>
-      <div className="form-grid">
-        <label className="field">
-          Jersey number (optional)
-          <input
-            type="number"
-            min={0}
-            max={999}
-            {...f.register("jersey", {
-              setValueAs: (v) => (v === "" ? null : Number(v)),
-            })}
-          />
-        </label>
-        <label className="field">
-          Starting Elo rating
-          <input
-            type="number"
-            min={100}
-            max={3500}
-            {...f.register("startingRating", { valueAsNumber: true })}
-          />
-          <small>
-            Chess & table tennis. Results are replayed from this value.
-          </small>
-        </label>
-      </div>
+      <label className="field">
+        Jersey number (optional)
+        <input
+          type="number"
+          min={0}
+          max={999}
+          {...f.register("jersey", {
+            setValueAs: (v) => (v === "" ? null : Number(v)),
+          })}
+        />
+      </label>
       <MediaUpload
         value={f.getValues("photo")}
         onChange={(url) => f.setValue("photo", url)}

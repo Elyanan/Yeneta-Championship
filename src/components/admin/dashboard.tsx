@@ -51,7 +51,7 @@ type Editor =
   | { kind: "import" }
   | null;
 type Confirm = {
-  kind: "delete-match" | "archive-athlete" | "archive-team";
+  kind: "delete-match" | "delete-athlete" | "archive-athlete" | "archive-team";
   id: string;
   name: string;
 } | null;
@@ -396,6 +396,19 @@ export function AdminDashboard({
                           >
                             <Archive size={14} />
                           </button>
+                          <button
+                            className="icon-button"
+                            aria-label={`Delete ${a.name}`}
+                            onClick={() =>
+                              setConfirm({
+                                kind: "delete-athlete",
+                                id: a.id,
+                                name: a.name,
+                              })
+                            }
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
                     ))
@@ -661,14 +674,18 @@ export function AdminDashboard({
         title={
           confirm?.kind === "delete-match"
             ? "Delete this match?"
-            : "Archive this registration?"
+            : confirm?.kind === "delete-athlete"
+              ? "Delete this athlete?"
+              : "Archive this registration?"
         }
         description={confirm?.name}
       >
         <p className="inline-help">
           {confirm?.kind === "delete-match"
             ? "The match will be removed. All affected standings, goals, assists and ratings will be recalculated immediately."
-            : "The registration will leave active rosters. Historical matches and statistics are preserved. Archiving a class also archives its athletes."}
+            : confirm?.kind === "delete-athlete"
+              ? "This permanently removes the athlete from the championship. Athletes with recorded match history must be archived instead to preserve results."
+              : "The registration will leave active rosters. Historical matches and statistics are preserved. Archiving a class also archives its athletes."}
         </p>
         <div className="form-actions">
           <Button variant="outline" onClick={() => setConfirm(null)}>
@@ -698,7 +715,9 @@ export function AdminDashboard({
               ? "Saving…"
               : confirm?.kind === "delete-match"
                 ? "Delete match"
-                : "Archive"}
+                : confirm?.kind === "delete-athlete"
+                  ? "Delete athlete"
+                  : "Archive"}
           </Button>
         </div>
       </Dialog>

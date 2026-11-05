@@ -13,6 +13,7 @@ export const operationSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("athlete"), value: athleteSchema }),
   z.object({ kind: z.literal("match"), value: matchSchema }),
   z.object({ kind: z.literal("delete-match"), id: z.string() }),
+  z.object({ kind: z.literal("delete-athlete"), id: z.string() }),
   z.object({ kind: z.literal("archive-athlete"), id: z.string() }),
   z.object({ kind: z.literal("archive-team"), id: z.string() }),
   z.object({
@@ -57,6 +58,22 @@ export function applyOperation(
       throw new DomainError("Match not found.");
     d.matches = d.matches.filter((m) => m.id !== op.id);
   }
+  if (op.kind === "delete-athlete") {
+    if (!d.athletes.some((a) => a.id === op.id))
+      throw new DomainError("Athlete not found.");
+    if (
+      d.matches.some(
+        (m) =>
+          ((m.sport === "chess" || m.sport === "table-tennis") &&
+            (m.homeId === op.id || m.awayId === op.id)) ||
+          m.goals.some((g) => g.scorerId === op.id || g.assistId === op.id),
+      )
+    )
+      throw new DomainError(
+        "This athlete has recorded match history. Archive the athlete to preserve those results.",
+      );
+    d.athletes = d.athletes.filter((a) => a.id !== op.id);
+  }
   if (op.kind === "archive-athlete") {
     const a = d.athletes.find((a) => a.id === op.id);
     if (!a) throw new DomainError("Athlete not found.");
@@ -88,7 +105,9 @@ export function applyOperation(
       message:
         op.kind === "delete-match"
           ? "Match deleted"
-          : `${op.kind.replaceAll("-", " ")} saved`,
+          : op.kind === "delete-athlete"
+            ? "Athlete deleted"
+            : `${op.kind.replaceAll("-", " ")} saved`,
     },
     ...d.audit,
   ].slice(0, 100);
