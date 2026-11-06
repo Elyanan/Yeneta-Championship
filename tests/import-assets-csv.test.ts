@@ -100,15 +100,18 @@ describe("rosters, exports and supplied asset mappings", () => {
     ).toBeNull();
     expect(matchAsset(identifyAsset("Unknown.png"), d.teams).teamId).toBeNull();
   });
-  it("generated assets stay below 100KB with a missing-logo report", () => {
+  it("generated assets stay below 100KB and include all class logos", () => {
     const manifest = JSON.parse(
       fs.readFileSync("public/images/asset-manifest.json", "utf8"),
     );
-    expect(manifest.files).toHaveLength(4);
+    expect(manifest.files).toHaveLength(5);
     expect(
       manifest.files.every((f: { bytes: number }) => f.bytes < 100_000),
     ).toBe(true);
-    expect(manifest.unresolved[0].team).toBe("grade-9");
+    expect(manifest.unresolved).toEqual([]);
+    expect(manifest.teams["grade-9"]).toBe("/images/fantasy.webp");
+    expect(fs.existsSync("public/images/fantasy.thumb.webp")).toBe(true);
+    expect(fs.existsSync("Fantasy (Grade 9).png")).toBe(true);
     expect(fs.existsSync("Invitus (Seniors).png")).toBe(true);
   });
 });

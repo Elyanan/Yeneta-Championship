@@ -41,10 +41,10 @@ export function initialData(): Championship {
       },
       {
         id: "grade-9",
-        name: "Grade 9",
+        name: "Fantasy",
         grade: 9,
         classCode: "",
-        logo: "",
+        logo: "/images/fantasy.webp",
         seasonId: "season-2026",
         active: true,
       },

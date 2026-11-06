@@ -1,16 +1,12 @@
 {
   "school": "/images/school-logo.webp",
   "teams": {
+    "grade-9": "/images/fantasy.webp",
     "grade-12": "/images/invitus.webp",
     "grade-11": "/images/panthers.webp",
     "grade-10": "/images/rising-stars.webp"
   },
-  "unresolved": [
-    {
-      "team": "grade-9",
-      "reason": "No unambiguous image; fallback emblem will be used."
-    }
-  ],
+  "unresolved": [],
   "files": [
     {
       "filename": "school_logo.jpg",
@@ -21,6 +17,16 @@
       "url": "/images/school-logo.webp",
       "thumbnail": "/images/school-logo.thumb.webp",
       "bytes": 30388
+    },
+    {
+      "filename": "Fantasy (Grade 9).png",
+      "name": "Fantasy",
+      "classCode": "",
+      "grade": 9,
+      "school": false,
+      "url": "/images/fantasy.webp",
+      "thumbnail": "/images/fantasy.thumb.webp",
+      "bytes": 28882
     },
     {
       "filename": "Invitus (Seniors).png",

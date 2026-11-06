@@ -67,7 +67,7 @@ describe("match-derived statistics", () => {
   it("keeps tied zero teams in deterministic name order", () => {
     expect(
       standings(initialData(), "football", "boys").map((r) => r.team.name),
-    ).toEqual(["Grade 9", "Invitus", "Panthers", "Rising Stars"]);
+    ).toEqual(["Fantasy", "Invitus", "Panthers", "Rising Stars"]);
   });
   it("separates seasons, divisions and void results", () => {
     const d = fixture();
