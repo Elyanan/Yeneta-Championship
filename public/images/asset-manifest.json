@@ -1,23 +1,18 @@
 {
-  "school": "/images/school-logo.webp",
+  "school": null,
   "teams": {
     "grade-9": "/images/fantasy.webp",
     "grade-12": "/images/invitus.webp",
     "grade-11": "/images/panthers.webp",
     "grade-10": "/images/rising-stars.webp"
   },
-  "unresolved": [],
-  "files": [
+  "unresolved": [
     {
-      "filename": "school_logo.jpg",
-      "name": "school_logo",
-      "classCode": "",
-      "grade": null,
-      "school": true,
-      "url": "/images/school-logo.webp",
-      "thumbnail": "/images/school-logo.thumb.webp",
-      "bytes": 30388
-    },
+      "file": "",
+      "reason": "Expected exactly one school logo."
+    }
+  ],
+  "files": [
     {
       "filename": "Fantasy (Grade 9).png",
       "name": "Fantasy",
