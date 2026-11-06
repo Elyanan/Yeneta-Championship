@@ -14,6 +14,7 @@ import {
 import type { Operation } from "@/lib/operations";
 import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/image-fallback";
+import { uploadMedia } from "@/lib/media-upload";
 export type SaveOperation = (op: Operation) => Promise<void>;
 export function MediaUpload({
   value,
@@ -77,15 +78,8 @@ export function MediaUpload({
           setBusy(true);
           onBusyChange?.(true);
           setError("");
-          const f = new FormData();
-          f.set("file", file);
           try {
-            const r = await fetch("/api/admin/media", {
-              method: "POST",
-              body: f,
-            });
-            const b = await r.json();
-            if (!r.ok) throw new Error(b.error);
+            const b = await uploadMedia(file, false);
             onChange(b.url);
           } catch (e) {
             setError(e instanceof Error ? e.message : "Upload failed.");

@@ -50,8 +50,22 @@ vi.mock("@sanity/client", () => ({
           ...doc,
           _rev: String(++memory.version),
         });
+      return structuredClone(memory.docs.get(doc._id as string));
     },
-    delete: async (id: string) => memory.docs.delete(id),
+    delete: async (
+      input: string | { params: { id?: string; now?: number } },
+    ) => {
+      if (typeof input === "string") return memory.docs.delete(input);
+      for (const [id, doc] of memory.docs) {
+        if (
+          input.params.id
+            ? id === input.params.id || doc.uploadId === input.params.id
+            : ["mediaUpload", "mediaUploadChunk"].includes(String(doc._type)) &&
+              Number(doc.expires) < Number(input.params.now)
+        )
+          memory.docs.delete(id);
+      }
+    },
     patch: (id: string) => {
       let rev = "",
         values = {};
@@ -86,6 +100,12 @@ import { POST as login } from "@/app/api/auth/login/route";
 import { POST as logout } from "@/app/api/auth/logout/route";
 import { POST as write, GET as read } from "@/app/api/admin/route";
 import { POST as media } from "@/app/api/admin/media/route";
+import {
+  POST as uploadAction,
+  PUT as uploadPart,
+  DELETE as cancelUpload,
+} from "@/app/api/admin/media/chunks/route";
+import { UPLOAD_CHUNK_SIZE } from "@/lib/media-upload";
 import { GET as exportCsv } from "@/app/api/export/route";
 import { publicSnapshot, mutate, readSnapshot } from "@/lib/sanity";
 const origin = "http://localhost:3000";
@@ -128,6 +148,97 @@ beforeEach(async () => {
   });
 });
 describe("server authorization and persistent operations", () => {
+  it("reassembles a 15 MB video across durable upload parts and cleans up", async () => {
+    await authenticate();
+    const bytes = new Uint8Array(15_000_000);
+    bytes.set([0, 0, 0, 24, 102, 116, 121, 112, 105, 115, 111, 109]);
+    const start = await uploadAction(
+      post("/api/admin/media/chunks", {
+        action: "start",
+        mime: "video/mp4",
+        size: bytes.length,
+        matchMedia: true,
+      }),
+    );
+    expect(start.status).toBe(200);
+    const { id } = await start.json();
+    expect(memory.docs.has(`upload.${id}`)).toBe(true);
+    for (let index = 0; index * UPLOAD_CHUNK_SIZE < bytes.length; index++) {
+      const response = await uploadPart(
+        new Request(
+          `${origin}/api/admin/media/chunks?id=${id}&index=${index}`,
+          {
+            method: "PUT",
+            headers: { origin },
+            body: bytes.slice(
+              index * UPLOAD_CHUNK_SIZE,
+              (index + 1) * UPLOAD_CHUNK_SIZE,
+            ),
+          },
+        ),
+      );
+      expect(response.status).toBe(200);
+    }
+    const complete = await uploadAction(
+      post("/api/admin/media/chunks", { action: "complete", id }),
+    );
+    expect(complete.status).toBe(200);
+    expect((await complete.json()).kind).toBe("video");
+    expect(Buffer.from(memory.uploaded).equals(Buffer.from(bytes))).toBe(true);
+    expect(
+      [...memory.docs.keys()].filter((key) => key.startsWith("upload.")),
+    ).toEqual([]);
+  });
+  it("protects chunk routes and rejects incomplete or expired uploads", async () => {
+    expect(
+      (
+        await uploadAction(
+          post("/api/admin/media/chunks", {
+            action: "start",
+            mime: "video/mp4",
+            size: 15_000_000,
+            matchMedia: true,
+          }),
+        )
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await cancelUpload(
+          new Request(`${origin}/api/admin/media/chunks?id=${"a".repeat(32)}`, {
+            method: "DELETE",
+            headers: { origin },
+          }),
+        )
+      ).status,
+    ).toBe(401);
+    await authenticate();
+    const { id } = await (
+      await uploadAction(
+        post("/api/admin/media/chunks", {
+          action: "start",
+          mime: "video/mp4",
+          size: 3_000_000,
+          matchMedia: true,
+        }),
+      )
+    ).json();
+    expect(
+      (
+        await uploadAction(
+          post("/api/admin/media/chunks", { action: "complete", id }),
+        )
+      ).status,
+    ).toBe(400);
+    memory.docs.get(`upload.${id}`)!.expires = 0;
+    expect(
+      (
+        await uploadAction(
+          post("/api/admin/media/chunks", { action: "complete", id }),
+        )
+      ).status,
+    ).toBe(410);
+  });
   it("persists a friendly and includes it in match exports without scoring rankings", async () => {
     await authenticate();
     const response = await write(

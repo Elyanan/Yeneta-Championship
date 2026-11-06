@@ -53,7 +53,7 @@ export function LineupPitch({
               <b>{athlete ? (athlete.jersey ?? "•") : <Plus size={14} />}</b>
             </span>
             <span className="pitch-player-name">
-              {athlete ? athlete.name.split(" ").slice(-1)[0] : position}
+              {athlete ? athlete.name.trim().split(/\s+/)[0] : position}
             </span>
             <small>{athlete ? position : onSelect ? "Add" : "—"}</small>
           </>

@@ -250,6 +250,29 @@ const adminSession = defineType({
   fields: [num("expires", 0, Number.MAX_SAFE_INTEGER)],
 });
 export const schemaTypes: SchemaTypeDefinition[] = [
+  defineType({
+    name: "mediaUpload",
+    type: "document",
+    hidden: true,
+    readOnly: true,
+    fields: [
+      num("size", 1, 50_000_000),
+      text("mime"),
+      bool("matchMedia"),
+      num("expires", 0, Number.MAX_SAFE_INTEGER),
+    ],
+  }),
+  defineType({
+    name: "mediaUploadChunk",
+    type: "document",
+    hidden: true,
+    readOnly: true,
+    fields: [
+      text("uploadId"),
+      text("data"),
+      num("expires", 0, Number.MAX_SAFE_INTEGER),
+    ],
+  }),
   championship,
   seasonRecord,
   teamRecord,

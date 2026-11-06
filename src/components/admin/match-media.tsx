@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { Upload, X, Film } from "lucide-react";
 import type { MatchMedia } from "@/types/championship";
+import { mediaFileError, uploadMedia } from "@/lib/media-upload";
 export function MatchMediaEditor({
   value,
   onChange,
@@ -42,6 +43,17 @@ export function MatchMediaEditor({
           const files = Array.from(e.target.files || []);
           if (!files.length) return;
           setError("");
+          const invalid = files
+            .map((file) => {
+              const message = mediaFileError(file, true);
+              return message ? `${file.name}: ${message}` : "";
+            })
+            .find(Boolean);
+          if (invalid) {
+            setError(invalid);
+            e.target.value = "";
+            return;
+          }
           if (value.length + files.length > 20) {
             setError("Each match can have up to 20 photos and clips.");
             e.target.value = "";
@@ -53,14 +65,11 @@ export function MatchMediaEditor({
           try {
             for (const [index, file] of files.entries()) {
               setProgress(`Uploading ${index + 1} of ${files.length}…`);
-              const form = new FormData();
-              form.set("file", file);
-              const r = await fetch("/api/admin/media?kind=match", {
-                method: "POST",
-                body: form,
-              });
-              const result = await r.json();
-              if (!r.ok) throw new Error(result.error || "Upload failed.");
+              const result = await uploadMedia(file, true, (percent) =>
+                setProgress(
+                  `Uploading ${index + 1} of ${files.length}… ${percent}%`,
+                ),
+              );
               next.push({
                 id: crypto.randomUUID(),
                 kind: result.kind,
