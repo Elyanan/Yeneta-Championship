@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formationIds } from "@/lib/formations";
 
 export const sports = [
   "football",
@@ -51,7 +52,6 @@ export const athleteSchema = z.object({
     .refine((v) => new Set(v).size === v.length),
   jersey: z.number().int().min(0).max(999).nullable(),
   active: z.boolean(),
-  startingRating: z.number().int().min(100).max(3500),
 });
 export const goalSchema = z.object({
   id,
@@ -62,6 +62,31 @@ export const goalSchema = z.object({
   stoppage: z.number().int().min(0).max(30),
   type: z.enum(["regular", "penalty", "own-goal"]),
 });
+export const lineupSchema = z.object({
+  formation: z.enum(formationIds),
+  players: z
+    .array(z.object({ position: z.string().min(1).max(10), athleteId: id }))
+    .max(11),
+});
+export const matchMediaSchema = z.discriminatedUnion("kind", [
+  z.object({
+    id,
+    kind: z.literal("image"),
+    url: image.refine(Boolean, "Image URL is required"),
+    caption: z.string().trim().max(200),
+  }),
+  z.object({
+    id,
+    kind: z.literal("video"),
+    url: z
+      .string()
+      .max(500)
+      .regex(
+        /^https:\/\/cdn\.sanity\.io\/files\/[a-zA-Z0-9/_.,%=-]+\.(mp4|webm)$/,
+      ),
+    caption: z.string().trim().max(200),
+  }),
+]);
 export const matchSchema = z.object({
   id,
   seasonId: id,
@@ -74,7 +99,11 @@ export const matchSchema = z.object({
   awayScore: z.number().int().min(0).max(100),
   goals: z.array(goalSchema).max(200),
   outcome: z.enum(["home", "away", "draw"]),
-  status: z.enum(["completed", "void"]),
+  status: z.enum(["scheduled", "completed", "void"]),
+  lineups: z
+    .object({ home: lineupSchema.optional(), away: lineupSchema.optional() })
+    .optional(),
+  media: z.array(matchMediaSchema).max(20).optional(),
   updatedAt: z.iso.datetime(),
 });
 export const seasonSchema = z
@@ -111,6 +140,8 @@ export type Team = z.infer<typeof teamSchema>;
 export type Athlete = z.infer<typeof athleteSchema>;
 export type Goal = z.infer<typeof goalSchema>;
 export type Match = z.infer<typeof matchSchema>;
+export type Lineup = z.infer<typeof lineupSchema>;
+export type MatchMedia = z.infer<typeof matchMediaSchema>;
 export type Championship = z.infer<typeof stateSchema>;
 export type Snapshot = {
   data: Championship;

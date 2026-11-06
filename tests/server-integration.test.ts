@@ -22,10 +22,17 @@ vi.mock("next/cache", () => ({
 vi.mock("@sanity/client", () => ({
   createClient: () => ({
     assets: {
-      upload: async (_kind: string, buffer: Uint8Array) => {
+      upload: async (
+        kind: string,
+        buffer: Uint8Array,
+        options?: { filename?: string },
+      ) => {
         memory.uploaded = new Uint8Array(buffer);
         return {
-          url: "https://cdn.sanity.io/images/testproject/production/test-600x400.webp",
+          url:
+            kind === "file"
+              ? `https://cdn.sanity.io/files/testproject/production/test.${options?.filename?.split(".").pop()}`
+              : "https://cdn.sanity.io/images/testproject/production/test-600x400.webp",
         };
       },
     },
@@ -121,6 +128,125 @@ beforeEach(async () => {
   });
 });
 describe("server authorization and persistent operations", () => {
+  it.each(["chess", "table-tennis"])(
+    "exports %s match records without a rating column",
+    async (sport) => {
+      const response = await exportCsv(
+        new Request(
+          `${origin}/api/export?kind=standings&sport=${sport}&division=boys`,
+        ),
+      );
+      expect(response.status).toBe(200);
+      const content = await response.text();
+      expect(content).toContain('"Played"');
+      expect(content).not.toMatch(/rating/i);
+    },
+  );
+  it("persists future fixtures, optional formations and media through the authenticated API", async () => {
+    await authenticate();
+    const response = await write(
+      post("/api/admin", {
+        revision: "1",
+        operation: {
+          kind: "match",
+          value: {
+            ...match(),
+            status: "scheduled",
+            date: new Date(Date.now() + 86_400_000).toISOString(),
+            homeScore: 0,
+            outcome: "draw",
+            goals: [],
+            lineups: {
+              home: {
+                formation: "4-3-3",
+                players: [{ position: "GK", athleteId: "a" }],
+              },
+            },
+            media: [
+              {
+                id: "clip",
+                kind: "video",
+                url: "https://cdn.sanity.io/files/testproject/production/test.mp4",
+                caption: "Highlights",
+              },
+            ],
+          },
+        },
+      }),
+    );
+    expect(response.status).toBe(200);
+    const saved = await response.json();
+    expect(saved.data.matches[0].status).toBe("scheduled");
+    const reloaded = await (await read()).json();
+    expect(reloaded.data.matches[0].lineups.home.players[0].athleteId).toBe(
+      "a",
+    );
+    expect(reloaded.data.matches[0].media[0].kind).toBe("video");
+    expect(memory.invalidations).toContainEqual([
+      "championship",
+      { expire: 0 },
+    ]);
+  });
+  it.each(["mp4", "webm"])(
+    "uploads supported %s clips only through match media",
+    async (extension) => {
+      await authenticate();
+      const bytes =
+        extension === "mp4"
+          ? new Uint8Array([
+              0, 0, 0, 24, 102, 116, 121, 112, 105, 115, 111, 109,
+            ])
+          : new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0, 0, 0, 0]);
+      const form = new FormData();
+      form.set(
+        "file",
+        new File([bytes], `clip.${extension}`, { type: `video/${extension}` }),
+      );
+      const req = (url: string) =>
+        new Request(origin + url, {
+          method: "POST",
+          headers: { origin },
+          body: form,
+        });
+      expect((await media(req("/api/admin/media"))).status).toBe(400);
+      const response = await media(req("/api/admin/media?kind=match"));
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        kind: "video",
+        url: expect.stringContaining(`/test.${extension}`),
+      });
+      expect(memory.uploaded).toEqual(bytes);
+    },
+  );
+  it("rejects malformed videos and oversized upload bodies", async () => {
+    await authenticate();
+    const form = new FormData();
+    form.set(
+      "file",
+      new File(["not a video"], "bad.mp4", { type: "video/mp4" }),
+    );
+    expect(
+      (
+        await media(
+          new Request(origin + "/api/admin/media?kind=match", {
+            method: "POST",
+            headers: { origin },
+            body: form,
+          }),
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await media(
+          new Request(origin + "/api/admin/media?kind=match", {
+            method: "POST",
+            headers: { origin, "content-length": "52000000" },
+          }),
+        )
+      ).status,
+    ).toBe(413);
+  });
   it("supports login, protected writes and logout through the local hostname alias", async () => {
     process.env.APP_ORIGIN = "http://127.0.0.1:3000";
     const response = await login(
@@ -168,6 +294,33 @@ describe("server authorization and persistent operations", () => {
     expect(await sharp(memory.uploaded).metadata()).toMatchObject({
       width: 600,
       height: 400,
+      format: "webp",
+    });
+  });
+  it("keeps match photos large enough for a gallery", async () => {
+    await authenticate();
+    const source = await sharp({
+      create: { width: 2400, height: 1200, channels: 3, background: "#125640" },
+    })
+      .png()
+      .toBuffer();
+    const form = new FormData();
+    form.set(
+      "file",
+      new File([new Uint8Array(source)], "match.png", { type: "image/png" }),
+    );
+    const response = await media(
+      new Request(origin + "/api/admin/media?kind=match", {
+        method: "POST",
+        headers: { origin },
+        body: form,
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).kind).toBe("image");
+    expect(await sharp(memory.uploaded).metadata()).toMatchObject({
+      width: 1600,
+      height: 800,
       format: "webp",
     });
   });

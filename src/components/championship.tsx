@@ -56,7 +56,7 @@ export function ChampionshipView({
     ? sport === "football"
       ? ["P", "W", "D", "L", "GD", "PTS", "FORM"]
       : ["P", "W", "L", "SW", "SL", "PTS", "FORM"]
-    : ["RATING", "W", "D", "L", "WIN %", "FORM"];
+    : ["P", "W", "D", "L", "WIN %", "FORM"];
   const teamRows = standings(d, sport, division)
     .map((r, i) => ({ ...r, rank: i + 1 }))
     .filter((r) =>
@@ -317,19 +317,18 @@ export function ChampionshipView({
                                       SW: "Sets won",
                                       SL: "Sets lost",
                                       FORM: "Last five matches",
-                                      RATING: "Elo rating",
                                       "WIN %": "Win percentage",
                                     } as Record<string, string>
                                   )[v] || v
                                 }
                               >
-                                {v === "RATING" || v === "WIN %" ? (
+                                {v === "WIN %" ? (
                                   <>
                                     <span className="column-label-full">
                                       {v}
                                     </span>
                                     <span className="column-label-compact">
-                                      {v === "RATING" ? "RTG" : "WIN%"}
+                                      WIN%
                                     </span>
                                   </>
                                 ) : (
@@ -412,7 +411,7 @@ export function ChampionshipView({
                                     </span>
                                   </Link>
                                 </td>
-                                <td className="points">{r.rating}</td>
+                                <td>{r.played}</td>
                                 <td>{r.wins}</td>
                                 <td>{r.draws}</td>
                                 <td>{r.losses}</td>

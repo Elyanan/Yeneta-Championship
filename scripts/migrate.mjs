@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 const [input, output] = process.argv.slice(2);
 if (!input || !output) {
   console.error(
-    "Usage: npm run migrate -- <legacy-json-file> <new-output-csv>\nRead-only conversion. Review all identities and ratings before importing.",
+    "Usage: npm run migrate -- <legacy-json-file> <new-output-csv>\nRead-only conversion. Review all identities before importing.",
   );
   process.exit(1);
 }
@@ -37,8 +37,7 @@ await fs.writeFile(
       proposedAthletes: rows.length - 1,
       warnings: [
         "Names are unverified. Remove all demonstration identities before importing.",
-        "Legacy aggregate wins and ratings are not match history and are not imported.",
-        "Starting ratings default to 1200; edit verified starting values in athlete management.",
+        "Legacy aggregate statistics are not match history and are not imported.",
         "No team-sport results are migrated. No data was published.",
       ],
     },

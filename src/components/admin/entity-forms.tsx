@@ -183,7 +183,6 @@ export function AthleteForm({
       sports: ["football"],
       jersey: null,
       active: true,
-      startingRating: 1200,
     },
   });
   return (

@@ -7,8 +7,8 @@ export default async function Matches() {
     <>
       <div className="page-title">
         <span className="eyebrow accent">THE MATCH CENTRE</span>
-        <h1>Every result. All here.</h1>
-        <p>The final whistle is just the beginning of the story.</p>
+        <h1>The next kickoff. The final whistle.</h1>
+        <p>Upcoming fixtures, match results, and the moments in between.</p>
       </div>
       <MatchCentre data={data} />
     </>

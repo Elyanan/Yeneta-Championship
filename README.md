@@ -84,7 +84,7 @@ For supplied project assets, run `npm run assets`. It scans root image files and
 
 ### Athletes and roster imports
 
-Open `/admin/players`. Filter by team, sport, or boys/girls division; search, add, edit, or archive athletes. Athletes can participate in several sports. Name, class, division and sports are required; jersey and photo are optional. Grade comes from the team to avoid conflicting fields. Starting rating defaults to 1200 for individual sports; wins and losses cannot be manually inflated.
+Open `/admin/players`. Filter by team, sport, or boys/girls division; search, add, edit, or archive athletes. Athletes can participate in several sports. Name, class, division and sports are required; jersey and photo are optional. Grade comes from the team to avoid conflicting fields. Wins, draws and losses come from recorded matches and cannot be manually inflated.
 
 Choose **Import roster** for CSV or `.xlsx` files, maximum 2 MB and 500 rows per import. Excel uses the first worksheet. The import dialog offers a CSV template, editable CSV text, row-level validation and a preview. All rows must be valid before the entire batch is committed atomically.
 
@@ -107,6 +107,14 @@ The **Record match** action is available throughout administration:
 
 Open `/admin/matches` to search, filter, correct or delete results. Deletion requires an explicit confirmation. All statistics are recalculated after a change. Match IDs and the shared revision guard protect against duplicate retries; concurrent stale edits are rejected with a reload instruction. No direct point increments are available.
 
+### Schedule fixtures, formations and match media
+
+Use **Schedule match** in administration to choose a future kickoff, sport, division, season and participants. Scheduled fixtures appear in the public match centre under **Upcoming fixtures** and do not affect standings, form or player records. After the game, edit the fixture, choose **Completed result**, and record the final score and events. Future completed results remain blocked.
+
+Football formations are optional for both fixtures and results. Choose the home or away team, add a lineup, select a formation, tap a pitch position and choose a roster player. Search players, move them between positions, clear a selection or remove a lineup. Changing shape keeps assignments whose positions still exist. Five 11-a-side formations, 7-a-side 2-3-1 and 5-a-side 2-2 are available. Partial lineups are allowed; players must belong to the correct football team and division, and cannot occupy two positions. Saved formations appear on the public match page.
+
+Use **Photos & highlights** in the match editor to upload up to 20 items per match. Supported photos are PNG, JPEG, WebP and AVIF (8 MB each); images are optimized to WebP up to 1600 px. Video highlights support MP4 and WebM (50 MB each), stored as Sanity file assets. Add optional captions and save the match to publish the gallery. The public gallery supports enlarged photos, video playback and previous/next navigation. Removing an item detaches it from the match; it does not delete the Sanity asset. Existing athlete and class image uploads retain their 600 px limit.
+
 ### Seasons, rules and exports
 
 Open `/admin/settings` to add an academic season and change the publicly selected season. Create class registrations for the new season. Old records remain stored. Football defaults to 3 points for a win, 1 for a draw, 0 for a loss; volleyball defaults to 2/0. Updating points configuration rebuilds standings. `enabledSports` pauses public competition displays without deleting records. Sport navigation remains in the required order: Football, Volleyball, Chess, Table Tennis; Football is the default.
@@ -115,7 +123,7 @@ Open `/admin/settings` to add an academic season and change the publicly selecte
 
 ## Statistics and persistence architecture
 
-`src/lib/statistics.ts` contains pure calculation functions. Football standings use points, goal difference, goals scored, then name and stable ID for a deterministic tie. Volleyball uses points, sets won, then name/ID. Recent form is the last five chronological results. Goal and assist rankings exclude own goals. Individual sports replay Elo from starting ratings, chronological date then stable match ID, using K=32, rounding each update and a minimum rating of 100. Draws are recorded explicitly; win percentage uses all played matches, including draws.
+`src/lib/statistics.ts` contains pure calculation functions. Football standings use points, goal difference, goals scored, then name and stable ID for a deterministic tie. Volleyball uses points, sets won, then name/ID. Recent form is the last five chronological results. Goal and assist rankings exclude own goals. Individual sports rank by wins, then win percentage, draws, fewer losses, name and stable ID. Draws are recorded explicitly; win percentage uses all played matches, including draws.
 
 The access-restricted Sanity document `championship.current` holds typed season/class/athlete/match arrays, settings and the most recent 100 audit entries. This deliberate aggregate boundary allows a single revision-guarded atomic write to validate references and prevent race conditions across rosters and matches. IDs inside this aggregate are stable application references, validated against the complete state; they are not cross-document Sanity references. Sanity array `_key` and `_type` metadata is added on persistence. Session and login-throttle documents are separate. No credentials are stored in the championship payload. All application documents use non-root IDs (`championship.current`, `session.<random-id>`, `security.admin-login`), which Sanity excludes from anonymous reads even in a public dataset. Keep these prefixes intact.
 
@@ -131,7 +139,7 @@ The new website never reads `SCHOOL_CHAMPIONSHIP_DATA_V3` automatically. If you 
 npm run migrate -- C:\path\legacy.json C:\path\review-roster.csv
 ```
 
-The helper only writes a proposed individual-sport roster and a JSON warning report, refusing to overwrite output files. It never connects to Sanity. Remove fictional/demo names, correct identities, then import through the admin preview. Legacy aggregate wins, form and ratings cannot reconstruct individual matches and are not silently converted. Verified starting ratings can be entered manually; genuine historical match records must be recorded with their dates through match management. Football/volleyball demonstration standings are never migrated. Keep the source JSON as an offline archive.
+The helper only writes a proposed individual-sport roster and a JSON warning report, refusing to overwrite output files. It never connects to Sanity. Remove fictional/demo names, correct identities, then import through the admin preview. Legacy aggregate statistics cannot reconstruct individual matches and are not silently converted. Genuine historical match records must be recorded with their dates through match management. Football/volleyball demonstration standings are never migrated. Keep the source JSON as an offline archive.
 
 ## Verification
 
@@ -142,7 +150,7 @@ npm run test
 npm run build
 ```
 
-Unit tests exercise standings, tie breaks, scorer/assist attribution, own goals, chronology, individual Elo, edits/deletions, archival integrity, schema validation, import previews, CSV safety and asset mapping. Server integration tests exercise the actual route handlers against an isolated mocked Sanity client, including authentication, revocation, rate limiting, authorization, persistence, revision conflicts and invalidation. Test identities never enter the application seed.
+Unit tests exercise standings, tie breaks, scorer/assist attribution, own goals, chronology, individual win/loss records, edits/deletions, archival integrity, schema validation, import previews, CSV safety and asset mapping. Server integration tests exercise the actual route handlers against an isolated mocked Sanity client, including authentication, revocation, rate limiting, authorization, persistence, revision conflicts and invalidation. Test identities never enter the application seed.
 
 Run `npm run backend:check` to verify the live connection and anonymous-access denial without exposing credentials. The server integration tests use an isolated mocked Sanity client. Live login, protected reads, logout, class saving and an existing class-logo upload have also been verified against the configured project. No invented athletes or matches were added.
 

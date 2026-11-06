@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { publicSnapshot } from "@/lib/sanity";
 import { MatchCard, Empty } from "@/components/shared";
-export const metadata = { title: "Match result" };
+import { MatchLineups } from "@/components/football-lineup";
+import { MatchGallery } from "@/components/match-gallery";
+export const metadata = { title: "Match centre" };
 export default async function MatchPage({
   params,
 }: {
@@ -10,22 +12,40 @@ export default async function MatchPage({
 }) {
   const { id } = await params,
     { data: d } = await publicSnapshot(),
-    m = d.matches.find((m) => m.id === id && m.status === "completed");
+    m = d.matches.find((m) => m.id === id && m.status !== "void");
   if (!m) notFound();
   const name = (id: string) =>
     d.athletes.find((a) => a.id === id)?.name || "Unknown athlete";
   return (
     <>
       <Link className="back-link" href="/matches">
-        ← All results
+        ← All matches
       </Link>
       <div className="page-title">
-        <span className="eyebrow accent">MATCH REPORT</span>
-        <h1>The final score.</h1>
+        <span className="eyebrow accent">
+          {m.status === "scheduled" ? "MATCH PREVIEW" : "MATCH REPORT"}
+        </span>
+        <h1>
+          {m.status === "scheduled" ? "The stage is set." : "The final score."}
+        </h1>
       </div>
       <div className="max-w-2xl mx-auto">
         <MatchCard match={m} data={d} />
-        {m.sport === "football" && (
+        {m.status === "scheduled" && (
+          <p className="notice">
+            Kickoff:{" "}
+            {new Intl.DateTimeFormat("en", {
+              dateStyle: "full",
+              timeStyle: "short",
+              timeZone: "Africa/Nairobi",
+            }).format(new Date(m.date))}{" "}
+            (EAT). The result will appear here after the match.
+          </p>
+        )}
+        {m.sport === "football" && (m.lineups?.home || m.lineups?.away) && (
+          <MatchLineups match={m} data={d} />
+        )}
+        {m.sport === "football" && m.status === "completed" && (
           <section className="panel section-space">
             <div className="panel-heading">
               <h2 className="text-xl">Goal timeline</h2>
@@ -69,6 +89,7 @@ export default async function MatchPage({
             )}
           </section>
         )}
+        {!!m.media?.length && <MatchGallery media={m.media} />}
       </div>
     </>
   );

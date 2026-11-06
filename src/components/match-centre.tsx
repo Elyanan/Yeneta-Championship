@@ -2,28 +2,56 @@
 import { useState } from "react";
 import { sports, sportNames, type Championship } from "@/types/championship";
 import { MatchCard, Empty } from "./shared";
-import { relevant } from "@/lib/statistics";
+import { chronological } from "@/lib/statistics";
 export function MatchCentre({ data: d }: { data: Championship }) {
   const [sport, setSport] = useState("all"),
     [division, setDivision] = useState("all"),
-    [search, setSearch] = useState("");
+    [search, setSearch] = useState(""),
+    [view, setView] = useState("all");
   const name = (id: string) =>
     d.teams.find((t) => t.id === id)?.name ||
     d.athletes.find((a) => a.id === id)?.name ||
     "";
-  const matches = relevant(d)
+  const matches = d.matches
     .filter(
       (m) =>
+        m.seasonId === d.settings.activeSeasonId &&
+        m.status !== "void" &&
+        (view === "all" || m.status === view) &&
         (sport === "all" || m.sport === sport) &&
         (division === "all" || m.division === division) &&
         `${name(m.homeId)} ${name(m.awayId)}`
           .toLowerCase()
           .includes(search.toLowerCase()),
     )
-    .reverse();
+    .sort((a, b) =>
+      a.status === b.status
+        ? a.status === "scheduled"
+          ? chronological(a, b)
+          : chronological(b, a)
+        : a.status === "scheduled"
+          ? -1
+          : 1,
+    );
   return (
     <>
-      <div className="table-toolbar panel mb-6">
+      <div className="match-centre-tabs" role="group" aria-label="Match view">
+        {[
+          { id: "all", label: "All matches" },
+          { id: "scheduled", label: "Upcoming fixtures" },
+          { id: "completed", label: "Results" },
+        ].map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            aria-pressed={view === v.id}
+            onClick={() => setView(v.id)}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+      <div className="table-toolbar panel mb-6 match-centre-filters">
         <select
           aria-label="Sport"
           value={sport}
@@ -64,7 +92,7 @@ export function MatchCentre({ data: d }: { data: Championship }) {
         <div className="panel">
           <Empty
             title="The stage is set."
-            detail="No recorded matches match these filters. Check back after the next game."
+            detail="No matches match these filters. Check back for the next fixture or result."
             icon="calendar"
           />
         </div>

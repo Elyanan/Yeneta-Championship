@@ -124,7 +124,7 @@ export function MatchCard({
         <span>
           {m.sport.replace("-", " ")} · {m.division}
         </span>
-        <span>FULL TIME</span>
+        <span>{m.status === "scheduled" ? "UPCOMING" : "FULL TIME"}</span>
       </div>
       <div className="match-score">
         <div>
@@ -132,13 +132,15 @@ export function MatchCard({
           <b>{teamSport ? home?.name : name(m.homeId)}</b>
         </div>
         <strong>
-          {teamSport
-            ? `${m.homeScore} : ${m.awayScore}`
-            : m.outcome === "draw"
-              ? "½ : ½"
-              : m.outcome === "home"
-                ? "1 : 0"
-                : "0 : 1"}
+          {m.status === "scheduled"
+            ? "VS"
+            : teamSport
+              ? `${m.homeScore} : ${m.awayScore}`
+              : m.outcome === "draw"
+                ? "½ : ½"
+                : m.outcome === "home"
+                  ? "1 : 0"
+                  : "0 : 1"}
         </strong>
         <div>
           {teamSport && <Badge team={away} />}
@@ -149,6 +151,9 @@ export function MatchCard({
         <span>
           {new Intl.DateTimeFormat("en", {
             dateStyle: "medium",
+            ...(m.status === "scheduled"
+              ? { timeStyle: "short" as const }
+              : {}),
             timeZone: "Africa/Nairobi",
           }).format(new Date(m.date))}
         </span>

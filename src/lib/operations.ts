@@ -66,11 +66,14 @@ export function applyOperation(
         (m) =>
           ((m.sport === "chess" || m.sport === "table-tennis") &&
             (m.homeId === op.id || m.awayId === op.id)) ||
-          m.goals.some((g) => g.scorerId === op.id || g.assistId === op.id),
+          m.goals.some((g) => g.scorerId === op.id || g.assistId === op.id) ||
+          Object.values(m.lineups || {}).some((lineup) =>
+            lineup?.players.some((p) => p.athleteId === op.id),
+          ),
       )
     )
       throw new DomainError(
-        "This athlete has recorded match history. Archive the athlete to preserve those results.",
+        "This athlete has recorded match history or a saved lineup. Archive the athlete to preserve those results, or remove them from the lineup first.",
       );
     d.athletes = d.athletes.filter((a) => a.id !== op.id);
   }

@@ -1,9 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { validateMatch, validateState, minuteValue } from "@/lib/validation";
 import { applyOperation } from "@/lib/operations";
-import { matchSchema } from "@/types/championship";
+import { athleteSchema, matchSchema } from "@/types/championship";
 import { fixture, goal, match } from "./fixtures";
 describe("server validation and archival integrity", () => {
+  it("removes obsolete starting ratings from older athlete records", () => {
+    expect(
+      athleteSchema.parse({ ...fixture().athletes[0], startingRating: 1200 }),
+    ).toEqual(fixture().athletes[0]);
+  });
   it("accepts a correctly attributed match", () =>
     expect(() =>
       validateState({ ...fixture(), matches: [match()] }),

@@ -1,5 +1,6 @@
 import { defineField, defineType, type SchemaTypeDefinition } from "sanity";
 import { validateState } from "../lib/validation";
+import { formationIds } from "../lib/formations";
 const text = (name: string, required = true) =>
   defineField({
     name,
@@ -95,7 +96,6 @@ const athleteRecord = defineType({
       validation: (r) => r.integer().min(0).max(999),
     }),
     bool("active"),
-    num("startingRating", 100, 3500),
   ],
   preview: { select: { title: "name", subtitle: "division" } },
 });
@@ -110,6 +110,37 @@ const goalEvent = defineType({
     num("minute", 0, 120),
     num("stoppage", 0, 30),
     choice("type", ["regular", "penalty", "own-goal"]),
+  ],
+});
+const lineupPlayer = defineType({
+  name: "lineupPlayer",
+  type: "object",
+  fields: [text("position"), text("athleteId")],
+});
+const lineupRecord = defineType({
+  name: "lineupRecord",
+  type: "object",
+  fields: [
+    choice("formation", [...formationIds]),
+    list("players", "lineupPlayer"),
+  ],
+});
+const matchLineups = defineType({
+  name: "matchLineups",
+  type: "object",
+  fields: [
+    defineField({ name: "home", type: "lineupRecord" }),
+    defineField({ name: "away", type: "lineupRecord" }),
+  ],
+});
+const matchMediaRecord = defineType({
+  name: "matchMediaRecord",
+  type: "object",
+  fields: [
+    text("id"),
+    choice("kind", ["image", "video"]),
+    text("url"),
+    text("caption", false),
   ],
 });
 const matchRecord = defineType({
@@ -132,7 +163,14 @@ const matchRecord = defineType({
     num("awayScore", 0, 100),
     list("goals", "goalEvent"),
     choice("outcome", ["home", "away", "draw"]),
-    choice("status", ["completed", "void"]),
+    choice("status", ["scheduled", "completed", "void"]),
+    defineField({ name: "lineups", type: "matchLineups" }),
+    defineField({
+      name: "media",
+      type: "array",
+      of: [{ type: "matchMediaRecord" }],
+      validation: (r) => r.max(20),
+    }),
     defineField({
       name: "updatedAt",
       type: "datetime",
@@ -212,6 +250,10 @@ export const schemaTypes: SchemaTypeDefinition[] = [
   athleteRecord,
   goalEvent,
   matchRecord,
+  lineupPlayer,
+  lineupRecord,
+  matchLineups,
+  matchMediaRecord,
   auditEvent,
   loginThrottle,
   adminSession,

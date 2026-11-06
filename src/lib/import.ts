@@ -48,7 +48,6 @@ export function previewRoster(
       jersey: r.jersey ? Number(r.jersey) : null,
       photo: r.photo || "",
       active: true,
-      startingRating: 1200,
     };
     const parsed = athleteSchema.safeParse(a);
     if (!parsed.success)

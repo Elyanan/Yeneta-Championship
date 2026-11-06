@@ -16,6 +16,8 @@ import { validateMatch, minuteValue } from "@/lib/validation";
 import { Badge, Avatar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import type { SaveOperation } from "./entity-forms";
+import { FootballLineups } from "@/components/football-lineup";
+import { MatchMediaEditor } from "./match-media";
 function localDate(iso: string) {
   const d = new Date(iso);
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
@@ -26,10 +28,12 @@ export function MatchForm({
   match,
   data: d,
   save,
+  initialStatus = "completed",
 }: {
   match?: Match;
   data: Championship;
   save: SaveOperation;
+  initialStatus?: "scheduled" | "completed";
 }) {
   const [m, setM] = useState<Match>(() =>
     match
@@ -41,19 +45,23 @@ export function MatchForm({
           division: "boys",
           homeId: "",
           awayId: "",
-          date: new Date().toISOString(),
+          date: new Date(
+            Date.now() + (initialStatus === "scheduled" ? 86_400_000 : 0),
+          ).toISOString(),
           homeScore: 0,
           awayScore: 0,
           goals: [],
           outcome: "draw",
-          status: "completed",
+          status: initialStatus,
           updatedAt: new Date().toISOString(),
         },
   );
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
+    [uploading, setUploading] = useState(false),
     [minuteErrors, setMinuteErrors] = useState<Record<string, string>>({});
   const isTeam = ["football", "volleyball"].includes(m.sport);
+  const scheduled = m.status === "scheduled";
   const choices = isTeam
     ? d.teams.filter(
         (t) =>
@@ -83,6 +91,7 @@ export function MatchForm({
       awayScore: 0,
       goals: [],
       outcome: "draw",
+      lineups: undefined,
     });
     setMinuteErrors({});
   }
@@ -115,6 +124,8 @@ export function MatchForm({
         setError("");
         setBusy(true);
         try {
+          if (uploading)
+            throw new Error("Wait for your media uploads to finish.");
           if (Object.values(minuteErrors).some(Boolean))
             throw new Error("Correct invalid match minutes.");
           const value = matchSchema.parse({
@@ -136,6 +147,49 @@ export function MatchForm({
         }
       }}
     >
+      <div className="match-mode">
+        <label className="field">
+          Match type
+          <select
+            aria-label="Match type"
+            value={m.status}
+            onChange={(e) => {
+              const status = e.target.value as Match["status"];
+              if (
+                status === "scheduled" &&
+                (m.goals.length || m.homeScore || m.awayScore) &&
+                !window.confirm(
+                  "Switch to a fixture and clear the unsaved score and goal events?",
+                )
+              )
+                return;
+              patch(
+                status === "scheduled"
+                  ? {
+                      status,
+                      homeScore: 0,
+                      awayScore: 0,
+                      goals: [],
+                      outcome: "draw",
+                    }
+                  : { status },
+              );
+              setMinuteErrors({});
+            }}
+          >
+            <option value="scheduled" disabled={match?.status === "completed"}>
+              Scheduled fixture
+            </option>
+            <option value="completed">Completed result</option>
+            {m.status === "void" && <option value="void">Voided result</option>}
+          </select>
+        </label>
+        <p>
+          {scheduled
+            ? "Plan the next game. No score is required, and standings stay unchanged until you record the result."
+            : "Record the final score after the match. Standings and player statistics update automatically."}
+        </p>
+      </div>
       <div className="form-grid">
         <label className="field">
           Sport
@@ -176,7 +230,7 @@ export function MatchForm({
           </select>
         </label>
         <label className="field">
-          Match date & time
+          Kickoff date & time (your local time)
           <input
             type="datetime-local"
             required
@@ -221,6 +275,7 @@ export function MatchForm({
                     goals: [],
                     homeScore: 0,
                     awayScore: 0,
+                    lineups: { ...m.lineups, [side]: undefined },
                   })
                 }
               >
@@ -231,7 +286,7 @@ export function MatchForm({
                   </option>
                 ))}
               </select>
-              {isTeam && (
+              {isTeam && !scheduled && (
                 <div className="score-control">
                   <button
                     type="button"
@@ -274,7 +329,7 @@ export function MatchForm({
           VS
         </span>
       </div>
-      {!isTeam && (
+      {!isTeam && !scheduled && (
         <label className="field">
           Match outcome
           <select
@@ -287,13 +342,16 @@ export function MatchForm({
             <option value="away">Second athlete wins</option>
             <option value="draw">Draw</option>
           </select>
-          <small>
-            Elo K = 32 · minimum rating 100 · replayed chronologically after
-            every edit.
-          </small>
         </label>
       )}
       {m.sport === "football" && (
+        <FootballLineups
+          match={m}
+          data={d}
+          onChange={(lineups) => patch({ lineups })}
+        />
+      )}
+      {m.sport === "football" && !scheduled && (
         <section>
           <div className="section-heading compact">
             <div>
@@ -477,7 +535,7 @@ export function MatchForm({
           </div>
         </section>
       )}
-      {m.sport === "volleyball" && (
+      {m.sport === "volleyball" && !scheduled && (
         <p className="notice">
           Win = {d.settings.volleyballWin} points · loss = 0 points. The winning
           team must have more sets.
@@ -486,18 +544,33 @@ export function MatchForm({
             : ""}
         </p>
       )}
+      <MatchMediaEditor
+        value={m.media || []}
+        onChange={(media) => patch({ media })}
+        onBusyChange={setUploading}
+      />
       {error && (
         <p className="notice error" role="alert">
           {error}
         </p>
       )}
       <div className="form-actions">
-        <Button disabled={busy || (m.sport === "football" && !reconciled)}>
+        <Button
+          disabled={
+            busy ||
+            uploading ||
+            (!scheduled && m.sport === "football" && !reconciled)
+          }
+        >
           {busy
-            ? "Saving result…"
-            : match
-              ? "Save corrected result"
-              : "Save match result"}
+            ? "Saving match…"
+            : uploading
+              ? "Uploading media…"
+              : scheduled
+                ? "Save scheduled match"
+                : match
+                  ? "Save match"
+                  : "Save match result"}
           <ArrowIcon />
         </Button>
       </div>

@@ -45,14 +45,20 @@ export async function readSnapshot(): Promise<Snapshot> {
     configured: true,
   };
 }
-const cachedRead = unstable_cache(readSnapshot, ["championship-snapshot"], {
+const cachedRead = unstable_cache(readSnapshot, ["championship-snapshot-v2"], {
   tags: ["championship"],
   revalidate: 60,
 });
 export async function publicSnapshot(): Promise<Snapshot> {
   try {
     const snap = await cachedRead();
-    return { ...snap, revision: "public", data: { ...snap.data, audit: [] } };
+    // Reapply the current schema to snapshots cached by an earlier app version.
+    // Removed fields must not survive in the public page's serialized data.
+    return {
+      ...snap,
+      revision: "public",
+      data: { ...validateState(snap.data), audit: [] },
+    };
   } catch {
     return {
       data: { ...initialData(), teams: [] },

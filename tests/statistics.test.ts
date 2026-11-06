@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { standings, contributions, rankings, elo } from "@/lib/statistics";
+import { standings, contributions, rankings } from "@/lib/statistics";
 import { initialData } from "@/lib/initial";
 import { applyOperation } from "@/lib/operations";
 import { fixture, match, goal } from "./fixtures";
@@ -150,12 +150,7 @@ describe("match-derived statistics", () => {
         ?.form,
     ).toEqual(["D", "W", "D", "W", "D"]);
   });
-  it("preserves original K=32, rounding, draws and rating floor", () => {
-    expect(elo(1200, 1200, 1)).toEqual([1216, 1184]);
-    expect(elo(1200, 1200, 0.5)).toEqual([1200, 1200]);
-    expect(elo(100, 100, 0)[0]).toBe(100);
-  });
-  it("recalculates individual ratings after deleting earlier matches", () => {
+  it("recalculates individual records after deleting earlier matches", () => {
     let d = fixture();
     d = applyOperation(d, {
       kind: "match",
@@ -190,13 +185,57 @@ describe("match-derived statistics", () => {
       wins: 1,
       draws: 1,
       winRate: 50,
-      rating: 1215,
     });
     d = applyOperation(d, { kind: "delete-match", id: "chess1" });
     expect(
       rankings(d, "chess", "boys").find((r) => r.athlete.id === "a"),
-    ).toMatchObject({ rating: 1200, wins: 0, draws: 1 });
+    ).toMatchObject({ played: 1, wins: 0, draws: 1, winRate: 0 });
   });
+  it.each(["chess", "table-tennis"] as const)(
+    "ranks %s by wins and win percentage using results only",
+    (sport) => {
+      const d = fixture();
+      d.matches = [
+        match({
+          id: "one",
+          sport,
+          homeId: "a",
+          awayId: "c",
+          homeScore: 0,
+          goals: [],
+        }),
+        match({
+          id: "two",
+          sport,
+          homeId: "a",
+          awayId: "d",
+          homeScore: 0,
+          goals: [],
+          outcome: "away",
+        }),
+        match({
+          id: "three",
+          sport,
+          homeId: "b",
+          awayId: "c",
+          homeScore: 0,
+          goals: [],
+        }),
+      ];
+      const rows = rankings(d, sport, "boys");
+      expect(rows[0].athlete.id).toBe("b");
+      expect(rows.findIndex((r) => r.athlete.id === "b")).toBeLessThan(
+        rows.findIndex((r) => r.athlete.id === "a"),
+      );
+      expect(rows.find((r) => r.athlete.id === "a")).toMatchObject({
+        played: 2,
+        wins: 1,
+        losses: 1,
+        winRate: 50,
+      });
+      for (const row of rows) expect(row).not.toHaveProperty("rating");
+    },
+  );
   it("does not mutate the source arrays when computing rankings", () => {
     const d = fixture(),
       before = structuredClone(d);

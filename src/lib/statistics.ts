@@ -98,16 +98,8 @@ export function standings(
         a.team.id.localeCompare(b.team.id),
     );
 }
-export function elo(a: number, b: number, result: number): [number, number] {
-  const expected = 1 / (1 + 10 ** ((b - a) / 400));
-  return [
-    Math.max(100, Math.round(a + 32 * (result - expected))),
-    Math.max(100, Math.round(b + 32 * (1 - result - (1 - expected)))),
-  ];
-}
 export type Ranking = {
   athlete: Athlete;
-  rating: number;
   wins: number;
   losses: number;
   draws: number;
@@ -136,7 +128,6 @@ export function rankings(
         athlete.id,
         {
           athlete,
-          rating: athlete.startingRating,
           wins: 0,
           losses: 0,
           draws: 0,
@@ -151,7 +142,6 @@ export function rankings(
       b = rows.get(m.awayId);
     if (!a || !b) continue;
     const result = m.outcome === "home" ? 1 : m.outcome === "away" ? 0 : 0.5;
-    [a.rating, b.rating] = elo(a.rating, b.rating, result);
     for (const [r, score] of [
       [a, result],
       [b, 1 - result],
@@ -170,8 +160,10 @@ export function rankings(
     .filter((r) => r.athlete.active || r.played)
     .sort(
       (a, b) =>
-        b.rating - a.rating ||
         b.wins - a.wins ||
+        b.winRate - a.winRate ||
+        b.draws - a.draws ||
+        a.losses - b.losses ||
         a.athlete.name.localeCompare(b.athlete.name) ||
         a.athlete.id.localeCompare(b.athlete.id),
     );

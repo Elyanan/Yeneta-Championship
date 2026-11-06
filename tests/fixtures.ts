@@ -14,7 +14,6 @@ export function athlete(
     sports: ["football", "volleyball", "chess", "table-tennis"],
     jersey: null,
     active: true,
-    startingRating: 1200,
   };
 }
 export function fixture(): Championship {

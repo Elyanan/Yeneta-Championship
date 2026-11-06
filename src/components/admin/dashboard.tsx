@@ -18,6 +18,7 @@ import {
   Trash2,
   Archive,
   RefreshCw,
+  CalendarPlus,
 } from "lucide-react";
 import {
   type Snapshot,
@@ -47,7 +48,7 @@ const navigation = [
 type Editor =
   | { kind: "team"; value?: Team }
   | { kind: "athlete"; value?: Athlete }
-  | { kind: "match"; value?: Match }
+  | { kind: "match"; value?: Match; initialStatus?: "scheduled" | "completed" }
   | { kind: "import" }
   | null;
 type Confirm = {
@@ -74,6 +75,7 @@ export function AdminDashboard({
     [division, setDivision] = useState("all"),
     [team, setTeam] = useState("all"),
     [archived, setArchived] = useState(false);
+  const [matchStatus, setMatchStatus] = useState("all");
   const router = useRouter(),
     d = snap.data;
   const activeTeams = d.teams.filter(
@@ -117,6 +119,7 @@ export function AdminDashboard({
   const matchRows = [...matches]
     .filter(
       (m) =>
+        (matchStatus === "all" || m.status === matchStatus) &&
         (sport === "all" || m.sport === sport) &&
         (division === "all" || m.division === division) &&
         `${name(m.homeId)} ${name(m.awayId)}`
@@ -182,6 +185,14 @@ export function AdminDashboard({
             </p>
           </div>
           <div className="admin-actions">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setEditor({ kind: "match", initialStatus: "scheduled" })
+              }
+            >
+              <CalendarPlus size={14} /> Schedule match
+            </Button>
             <Button variant="outline" onClick={reload} disabled={busy}>
               <RefreshCw size={14} />
               Reload
@@ -284,6 +295,18 @@ export function AdminDashboard({
           <>
             <div className="table-toolbar panel mb-5">
               <div className="table-filters flex-wrap">
+                {section === "matches" && (
+                  <select
+                    aria-label="Filter match status"
+                    value={matchStatus}
+                    onChange={(e) => setMatchStatus(e.target.value)}
+                  >
+                    <option value="all">All matches</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="void">Voided</option>
+                  </select>
+                )}
                 <select
                   aria-label="Filter sport"
                   value={sport}
@@ -419,15 +442,26 @@ export function AdminDashboard({
                           <Link href={`/matches/${m.id}`}>
                             <b>
                               {name(m.homeId)}{" "}
-                              {["football", "volleyball"].includes(m.sport)
-                                ? `${m.homeScore}–${m.awayScore}`
-                                : "vs"}{" "}
+                              {m.status === "scheduled"
+                                ? "vs"
+                                : ["football", "volleyball"].includes(m.sport)
+                                  ? `${m.homeScore}–${m.awayScore}`
+                                  : "vs"}{" "}
                               {name(m.awayId)}
                             </b>
                           </Link>
                           <small>
-                            {sportNames[m.sport]} · {m.division} ·{" "}
-                            {new Date(m.date).toLocaleDateString("en", {
+                            <span className={`match-status status-${m.status}`}>
+                              {m.status === "scheduled"
+                                ? "Scheduled"
+                                : m.status === "void"
+                                  ? "Voided"
+                                  : "Completed"}
+                            </span>{" "}
+                            · {sportNames[m.sport]} · {m.division} ·{" "}
+                            {new Date(m.date).toLocaleString("en", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
                               timeZone: "Africa/Nairobi",
                             })}
                           </small>
@@ -464,12 +498,12 @@ export function AdminDashboard({
                   title={
                     section === "players"
                       ? "No athletes found."
-                      : "No recorded matches found."
+                      : "No matches found."
                   }
                   detail={
                     section === "players"
                       ? "Add an athlete manually or import a roster to get started."
-                      : "Record a result to calculate standings and rankings."
+                      : "Schedule an upcoming match or record a completed result."
                   }
                 />
               )}
@@ -636,8 +670,10 @@ export function AdminDashboard({
         title={
           editor?.kind === "match"
             ? editor.value
-              ? "Correct match result"
-              : "Record a match"
+              ? "Manage match"
+              : editor.initialStatus === "scheduled"
+                ? "Schedule a match"
+                : "Record a match"
             : editor?.kind === "team"
               ? editor.value
                 ? "Edit class"
@@ -650,7 +686,7 @@ export function AdminDashboard({
         }
         description={
           editor?.kind === "match"
-            ? "Every goal, every assist, every point. Record the full story."
+            ? "Schedule the kickoff, set your game plan, and share the match moments."
             : "Validated and saved securely to the championship."
         }
         wide={editor?.kind === "match" || editor?.kind === "import"}
@@ -662,7 +698,12 @@ export function AdminDashboard({
           <AthleteForm athlete={editor.value} data={d} save={save} />
         )}
         {editor?.kind === "match" && (
-          <MatchForm match={editor.value} data={d} save={save} />
+          <MatchForm
+            match={editor.value}
+            initialStatus={editor.initialStatus}
+            data={d}
+            save={save}
+          />
         )}
         {editor?.kind === "import" && <ImportForm data={d} save={save} />}
       </Dialog>
@@ -682,7 +723,7 @@ export function AdminDashboard({
       >
         <p className="inline-help">
           {confirm?.kind === "delete-match"
-            ? "The match will be removed. All affected standings, goals, assists and ratings will be recalculated immediately."
+            ? "The match will be removed. All affected standings, goals, assists and player records will be recalculated immediately."
             : confirm?.kind === "delete-athlete"
               ? "This permanently removes the athlete from the championship. Athletes with recorded match history must be archived instead to preserve results."
               : "The registration will leave active rosters. Historical matches and statistics are preserved. Archiving a class also archives its athletes."}

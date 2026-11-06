@@ -89,8 +89,8 @@ export default async function AthletePage({
                 ) : (
                   <>
                     <div>
-                      <strong>{r?.rating || a.startingRating}</strong>
-                      <small>Elo rating</small>
+                      <strong>{r?.played || 0}</strong>
+                      <small>Matches played</small>
                     </div>
                     <div>
                       <strong>{r?.wins || 0}</strong>

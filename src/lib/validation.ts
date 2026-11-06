@@ -3,6 +3,7 @@ import {
   type Championship,
   type Match,
 } from "../types/championship";
+import { formationSlots } from "./formations";
 export class DomainError extends Error {}
 function requireThat(condition: unknown, message: string): asserts condition {
   if (!condition) throw new DomainError(message);
@@ -16,7 +17,8 @@ export function validateMatch(m: Match, d: Championship) {
     "Match date must be within the season.",
   );
   requireThat(
-    new Date(m.date).getTime() <= Date.now() + 60000,
+    m.status === "scheduled" ||
+      new Date(m.date).getTime() <= Date.now() + 60000,
     "Completed matches cannot be in the future.",
   );
   const teamSport = m.sport === "football" || m.sport === "volleyball";
@@ -38,6 +40,53 @@ export function validateMatch(m: Match, d: Championship) {
         ),
         "Athletes must match the sport, season and division.",
       );
+  if (m.lineups && Object.values(m.lineups).some(Boolean)) {
+    requireThat(
+      m.sport === "football",
+      "Formations are only available for football.",
+    );
+    for (const side of ["home", "away"] as const) {
+      const lineup = m.lineups[side];
+      if (!lineup) continue;
+      const slots = formationSlots(lineup.formation).map((s) => s.position);
+      requireThat(
+        new Set(lineup.players.map((p) => p.position)).size ===
+          lineup.players.length,
+        "Each position can only have one player.",
+      );
+      requireThat(
+        new Set(lineup.players.map((p) => p.athleteId)).size ===
+          lineup.players.length,
+        "A player can only occupy one position per team.",
+      );
+      for (const p of lineup.players) {
+        requireThat(
+          slots.includes(p.position),
+          "Choose a position in the selected formation.",
+        );
+        requireThat(
+          d.athletes.some(
+            (a) =>
+              a.id === p.athleteId &&
+              a.teamId === (side === "home" ? m.homeId : m.awayId) &&
+              a.division === m.division &&
+              a.sports.includes("football"),
+          ),
+          "Lineup players must belong to the correct football roster and division.",
+        );
+      }
+    }
+  }
+  if (m.status === "scheduled") {
+    requireThat(
+      m.homeScore === 0 &&
+        m.awayScore === 0 &&
+        m.goals.length === 0 &&
+        m.outcome === "draw",
+      "Scheduled matches cannot have scores, goal events or a result.",
+    );
+    return;
+  }
   if (m.sport === "football") {
     const ids = new Set<string>();
     for (const g of m.goals) {
