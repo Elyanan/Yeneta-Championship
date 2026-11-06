@@ -65,6 +65,10 @@ export const goalSchema = z.object({
 export const lineupSchema = z.object({
   formation: z.enum(formationIds),
   substitutes: z.array(id).max(100).optional(),
+  substitutions: z
+    .array(z.object({ id, outgoingId: id, incomingId: id }))
+    .max(100)
+    .optional(),
   players: z
     .array(z.object({ position: z.string().min(1).max(10), athleteId: id }))
     .max(11),

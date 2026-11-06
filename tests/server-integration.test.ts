@@ -156,11 +156,17 @@ describe("server authorization and persistent operations", () => {
           formation: "4-3-3",
           players: [{ position: "GK", athleteId: "a" }],
           substitutes: ["b"],
+          substitutions: [
+            { id: "home-change", outgoingId: "a", incomingId: "b" },
+          ],
         },
         away: {
           formation: "4-4-2",
           players: [{ position: "GK", athleteId: "c" }],
           substitutes: ["d"],
+          substitutions: [
+            { id: "away-change", outgoingId: "c", incomingId: "d" },
+          ],
         },
       },
     });
@@ -174,6 +180,14 @@ describe("server authorization and persistent operations", () => {
     const saved = (await (await read()).json()).data.matches[0];
     expect(saved.lineups.home.substitutes).toEqual(["b"]);
     expect(saved.lineups.away.substitutes).toEqual(["d"]);
+    expect(saved.lineups.home.substitutions[0]).toMatchObject({
+      outgoingId: "a",
+      incomingId: "b",
+    });
+    expect(saved.lineups.away.substitutions[0]).toMatchObject({
+      outgoingId: "c",
+      incomingId: "d",
+    });
   });
   it("reassembles a 15 MB video across durable upload parts and cleans up", async () => {
     await authenticate();

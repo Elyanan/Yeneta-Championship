@@ -13,6 +13,7 @@ import type {
   Match,
 } from "@/types/championship";
 import { Badge, Avatar } from "./shared";
+import { reconcileSubstitutions, substitutionState } from "@/lib/substitutions";
 
 export function LineupPitch({
   lineup,
@@ -99,6 +100,8 @@ export function FootballLineups({
     [position, setPosition] = useState("GK"),
     [query, setQuery] = useState(""),
     [subQuery, setSubQuery] = useState("");
+  const [outgoingId, setOutgoingId] = useState(""),
+    [incomingId, setIncomingId] = useState("");
   const teamId = side === "home" ? m.homeId : m.awayId;
   const team = d.teams.find((t) => t.id === teamId);
   const lineup = m.lineups?.[side];
@@ -121,8 +124,18 @@ export function FootballLineups({
       ? position
       : "GK";
   const assigned = lineup?.players.find((p) => p.position === selected);
+  const changes = lineup
+    ? substitutionState(lineup)
+    : { onField: [] as string[], remainingBench: [] as string[] };
+  const outgoing = changes.onField.includes(outgoingId) ? outgoingId : "";
+  const incoming = changes.remainingBench.includes(incomingId)
+    ? incomingId
+    : "";
   const update = (value: Lineup | undefined) => {
-    const next = { ...m.lineups, [side]: value };
+    const next = {
+      ...m.lineups,
+      [side]: value ? reconcileSubstitutions(value) : undefined,
+    };
     onChange(next.home || next.away ? next : undefined);
   };
   return (
@@ -156,6 +169,8 @@ export function FootballLineups({
                 setSide(s);
                 setQuery("");
                 setSubQuery("");
+                setOutgoingId("");
+                setIncomingId("");
               }}
             >
               <Badge team={t} size={28} />
@@ -348,14 +363,14 @@ export function FootballLineups({
           </div>
           <div className="substitute-picker">
             <div className="match-section-title">
-              <h4>Substitutes</h4>
+              <h4>Bench players</h4>
               <span className="optional-tag">
                 {substitutes.length} selected
               </span>
             </div>
             <p className="inline-help">
-              Choose the players on the bench for {team?.name}. Starting players
-              are excluded.
+              Choose the bench for {team?.name}, then record who replaces whom
+              below. Starting players are excluded.
             </p>
             <label className="search-box">
               <Search size={15} />
@@ -381,6 +396,9 @@ export function FootballLineups({
                       type="checkbox"
                       aria-label={`Substitute ${a.name}`}
                       checked={substitutes.includes(a.id)}
+                      disabled={lineup.substitutions?.some(
+                        (s) => s.incomingId === a.id,
+                      )}
                       onChange={(e) =>
                         update({
                           ...lineup,
@@ -411,6 +429,104 @@ export function FootballLineups({
                   No substitutes match your search.
                 </p>
               )}
+          </div>
+          <div className="substitution-editor">
+            <div className="match-section-title">
+              <h4>Substitutions</h4>
+              <span className="optional-tag">
+                {lineup.substitutions?.length || 0}{" "}
+                {lineup.substitutions?.length === 1 ? "change" : "changes"}
+              </span>
+            </div>
+            <p className="inline-help">
+              Choose a player coming off, then an unused bench player coming on.
+              Add as many changes as needed.
+            </p>
+            <div className="form-grid">
+              <label className="field">
+                Player coming off
+                <select
+                  value={outgoing}
+                  onChange={(e) => {
+                    setOutgoingId(e.target.value);
+                    setIncomingId("");
+                  }}
+                >
+                  <option value="">Choose from the lineup</option>
+                  {changes.onField.map((id) => {
+                    const a = eligible.find((a) => a.id === id);
+                    return a ? (
+                      <option value={id} key={id}>
+                        {a.name}
+                        {a.jersey !== null ? ` · #${a.jersey}` : ""}
+                      </option>
+                    ) : null;
+                  })}
+                </select>
+              </label>
+              <label className="field">
+                Player coming on
+                <select
+                  value={incoming}
+                  disabled={!outgoing}
+                  onChange={(e) => setIncomingId(e.target.value)}
+                >
+                  <option value="">Choose from the remaining bench</option>
+                  {changes.remainingBench.map((id) => {
+                    const a = eligible.find((a) => a.id === id);
+                    return a ? (
+                      <option value={id} key={id}>
+                        {a.name}
+                        {a.jersey !== null ? ` · #${a.jersey}` : ""}
+                      </option>
+                    ) : null;
+                  })}
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              className="lineup-add-button"
+              disabled={!outgoing || !incoming}
+              onClick={() => {
+                update({
+                  ...lineup,
+                  substitutions: [
+                    ...(lineup.substitutions || []),
+                    {
+                      id: crypto.randomUUID(),
+                      outgoingId: outgoing,
+                      incomingId: incoming,
+                    },
+                  ],
+                });
+                setOutgoingId("");
+                setIncomingId("");
+              }}
+            >
+              <Plus size={15} /> Add substitution
+            </button>
+            {!changes.remainingBench.length && (
+              <p className="inline-help">
+                Select more bench players above to add another substitution.
+              </p>
+            )}
+            <SubstitutionList
+              lineup={lineup}
+              athletes={d.athletes}
+              onRemove={(id) =>
+                update({
+                  ...lineup,
+                  substitutions: lineup.substitutions?.filter(
+                    (s) => s.id !== id,
+                  ),
+                })
+              }
+            />
+            <p className="inline-help">
+              Editing the lineup, bench or an earlier change clears any later
+              substitutions that no longer fit.
+            </p>
           </div>
         </>
       )}
@@ -480,9 +596,14 @@ export function MatchLineups({
           />
           <div className="lineup-substitutes">
             <h3>Substitutes</h3>
-            {lineup.substitutes?.length ? (
+            <SubstitutionList lineup={lineup} athletes={d.athletes} />
+            {!!lineup.substitutions?.length &&
+              !!substitutionState(lineup).remainingBench.length && (
+                <h4 className="unused-bench-heading">Unused bench players</h4>
+              )}
+            {substitutionState(lineup).remainingBench.length ? (
               <ul className="lineup-roster">
-                {lineup.substitutes.map((id) => {
+                {substitutionState(lineup).remainingBench.map((id) => {
                   const a = d.athletes.find((a) => a.id === id);
                   return a ? (
                     <li key={id}>
@@ -493,12 +614,63 @@ export function MatchLineups({
                   ) : null;
                 })}
               </ul>
-            ) : (
+            ) : !lineup.substitutions?.length ? (
               <p className="inline-help">No substitutes listed.</p>
-            )}
+            ) : null}
           </div>
         </>
       )}
     </section>
   );
+}
+
+function SubstitutionList({
+  lineup,
+  athletes,
+  onRemove,
+}: {
+  lineup: Lineup;
+  athletes: Athlete[];
+  onRemove?: (id: string) => void;
+}) {
+  return lineup.substitutions?.length ? (
+    <ul className="substitution-list">
+      {lineup.substitutions.map((s, index) => {
+        const playerIn = athletes.find((a) => a.id === s.incomingId),
+          playerOut = athletes.find((a) => a.id === s.outgoingId);
+        return (
+          <li key={s.id}>
+            <div className="substitution-person player-on">
+              <small>ON</small>
+              <span>
+                {playerIn?.name}
+                {playerIn?.jersey !== null &&
+                  playerIn?.jersey !== undefined && <em>#{playerIn.jersey}</em>}
+              </span>
+            </div>
+            <div className="substitution-person player-off">
+              <small>REPLACES</small>
+              <span>
+                {playerOut?.name}
+                {playerOut?.jersey !== null &&
+                  playerOut?.jersey !== undefined && (
+                    <em>#{playerOut.jersey}</em>
+                  )}
+              </span>
+            </div>
+            {onRemove && (
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={`Remove substitution ${index + 1}`}
+                onClick={() => onRemove(s.id)}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  ) : null;
 }

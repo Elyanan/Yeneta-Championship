@@ -4,6 +4,7 @@ import {
   type Match,
 } from "../types/championship";
 import { formationSlots } from "./formations";
+import { substitutionState } from "./substitutions";
 export class DomainError extends Error {}
 function requireThat(condition: unknown, message: string): asserts condition {
   if (!condition) throw new DomainError(message);
@@ -95,6 +96,8 @@ export function validateMatch(m: Match, d: Championship) {
           "Lineup players and substitutes must belong to the correct football roster and division.",
         );
       }
+      const changes = substitutionState(lineup);
+      requireThat(!changes.error, changes.error || "Invalid substitutions.");
     }
   }
   if (m.status === "scheduled") {

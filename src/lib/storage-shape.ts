@@ -45,6 +45,15 @@ export function storageShape(d: Championship) {
                         _key: p.position,
                         _type: "lineupPlayer",
                       })),
+                      ...(value!.substitutions
+                        ? {
+                            substitutions: value!.substitutions.map((s) => ({
+                              ...s,
+                              _key: s.id,
+                              _type: "lineupSubstitution",
+                            })),
+                          }
+                        : {}),
                     },
                   ]),
               ),

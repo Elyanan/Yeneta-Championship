@@ -13,6 +13,19 @@ const manifest = { school: null, teams: {}, unresolved: [], files: [] },
   teams = initialData().teams;
 const identified = files.map(identifyAsset),
   school = identified.filter((a) => a.school);
+// Keep the existing school badge usable if its original source was removed.
+if (!school.length) {
+  const generated = path.join(out, "school-logo.webp");
+  try {
+    await fs.access(generated);
+    school.push({
+      ...identifyAsset("school-logo.webp"),
+      filename: "public/images/school-logo.webp",
+    });
+  } catch {
+    /* Report a missing badge below when neither version exists. */
+  }
+}
 if (school.length !== 1)
   manifest.unresolved.push({
     file: school.map((s) => s.filename).join(", "),
@@ -49,11 +62,21 @@ const toOptimize = [
 ];
 for (const { asset, slug, id } of toOptimize) {
   const input = path.join(root, asset.filename);
+  const reuseGenerated = path.dirname(input) === out;
   const filename = `${slug}.webp`;
   for (const [pixels, suffix] of [
     [512, ""],
     [128, ".thumb"],
   ]) {
+    const output = path.join(out, `${slug}${suffix}.webp`);
+    if (
+      reuseGenerated &&
+      (await fs.access(output).then(
+        () => true,
+        () => false,
+      ))
+    )
+      continue;
     await sharp(input, { limitInputPixels: 40_000_000 })
       .rotate()
       .resize(pixels, pixels, { fit: "inside", withoutEnlargement: true })
@@ -70,10 +93,18 @@ for (const { asset, slug, id } of toOptimize) {
   if (id) manifest.teams[id] = `/images/${filename}`;
   else {
     manifest.school = `/images/${filename}`;
-    await sharp(input)
-      .resize(64, 64, { fit: "contain", background: "#ffffff" })
-      .png()
-      .toFile(path.join(out, "favicon.png"));
+    const favicon = path.join(out, "favicon.png");
+    if (
+      !reuseGenerated ||
+      !(await fs.access(favicon).then(
+        () => true,
+        () => false,
+      ))
+    )
+      await sharp(input)
+        .resize(64, 64, { fit: "contain", background: "#ffffff" })
+        .png()
+        .toFile(favicon);
   }
 }
 for (const t of teams)

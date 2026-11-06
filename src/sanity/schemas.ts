@@ -124,6 +124,12 @@ const lineupRecord = defineType({
     choice("formation", [...formationIds]),
     list("players", "lineupPlayer"),
     defineField({
+      name: "substitutions",
+      type: "array",
+      of: [{ type: "lineupSubstitution" }],
+      validation: (r) => r.max(100),
+    }),
+    defineField({
       name: "substitutes",
       type: "array",
       of: [{ type: "string" }],
@@ -256,6 +262,11 @@ const adminSession = defineType({
   fields: [num("expires", 0, Number.MAX_SAFE_INTEGER)],
 });
 export const schemaTypes: SchemaTypeDefinition[] = [
+  defineType({
+    name: "lineupSubstitution",
+    type: "object",
+    fields: [text("id"), text("outgoingId"), text("incomingId")],
+  }),
   defineType({
     name: "mediaUpload",
     type: "document",
