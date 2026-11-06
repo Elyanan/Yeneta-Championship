@@ -148,6 +148,33 @@ beforeEach(async () => {
   });
 });
 describe("server authorization and persistent operations", () => {
+  it("saves and reloads each team's substitutes through the admin API", async () => {
+    await authenticate();
+    const value = match({
+      lineups: {
+        home: {
+          formation: "4-3-3",
+          players: [{ position: "GK", athleteId: "a" }],
+          substitutes: ["b"],
+        },
+        away: {
+          formation: "4-4-2",
+          players: [{ position: "GK", athleteId: "c" }],
+          substitutes: ["d"],
+        },
+      },
+    });
+    const response = await write(
+      post("/api/admin", {
+        revision: "1",
+        operation: { kind: "match", value },
+      }),
+    );
+    expect(response.status).toBe(200);
+    const saved = (await (await read()).json()).data.matches[0];
+    expect(saved.lineups.home.substitutes).toEqual(["b"]);
+    expect(saved.lineups.away.substitutes).toEqual(["d"]);
+  });
   it("reassembles a 15 MB video across durable upload parts and cleans up", async () => {
     await authenticate();
     const bytes = new Uint8Array(15_000_000);

@@ -2623,7 +2623,7 @@ button.pitch-position:hover {
 .public-lineups > .lineup-team-tabs,
 .public-formation-label,
 .public-lineups > .lineup-pitch,
-.public-lineups > .lineup-roster {
+.public-lineups > .lineup-substitutes {
   margin-inline: 20px;
 }
 .public-lineups > .lineup-pitch {
@@ -2661,13 +2661,79 @@ button.pitch-position:hover {
   color: var(--green);
   font-size: 10px;
 }
-.lineup-roster li span {
+.lineup-roster li > span:not(.avatar) {
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 .lineup-roster li small {
   color: var(--muted);
+}
+.lineup-substitutes h3 {
+  font-size: 16px;
+  margin-block: 22px 8px;
+}
+.lineup-substitutes .lineup-roster {
+  margin-top: 8px;
+}
+.substitute-picker {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+.substitute-picker h4 {
+  font-size: 17px;
+}
+.substitute-picker > .search-box {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin-bottom: 14px;
+}
+.substitute-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.substitute-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.substitute-option:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+}
+.substitute-option input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: var(--green);
+}
+.substitute-option > span:not(.avatar) {
+  min-width: 0;
+  flex: 1;
+}
+.substitute-option b {
+  display: block;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.substitute-option small {
+  font-size: 10px;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .substitute-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .gallery-grid {
   display: grid;

@@ -67,8 +67,10 @@ export function applyOperation(
           ((m.sport === "chess" || m.sport === "table-tennis") &&
             (m.homeId === op.id || m.awayId === op.id)) ||
           m.goals.some((g) => g.scorerId === op.id || g.assistId === op.id) ||
-          Object.values(m.lineups || {}).some((lineup) =>
-            lineup?.players.some((p) => p.athleteId === op.id),
+          Object.values(m.lineups || {}).some(
+            (lineup) =>
+              lineup?.players.some((p) => p.athleteId === op.id) ||
+              lineup?.substitutes?.includes(op.id),
           ),
       )
     )

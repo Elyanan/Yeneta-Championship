@@ -97,7 +97,8 @@ export function FootballLineups({
 }) {
   const [side, setSide] = useState<"home" | "away">("home"),
     [position, setPosition] = useState("GK"),
-    [query, setQuery] = useState("");
+    [query, setQuery] = useState(""),
+    [subQuery, setSubQuery] = useState("");
   const teamId = side === "home" ? m.homeId : m.awayId;
   const team = d.teams.find((t) => t.id === teamId);
   const lineup = m.lineups?.[side];
@@ -106,7 +107,13 @@ export function FootballLineups({
       a.teamId === teamId &&
       a.division === m.division &&
       a.sports.includes("football") &&
-      (a.active || lineup?.players.some((p) => p.athleteId === a.id)),
+      (a.active ||
+        lineup?.players.some((p) => p.athleteId === a.id) ||
+        lineup?.substitutes?.includes(a.id)),
+  );
+  const substitutes = lineup?.substitutes || [];
+  const benchCandidates = eligible.filter(
+    (a) => !lineup?.players.some((p) => p.athleteId === a.id),
   );
   const selected =
     lineup &&
@@ -148,6 +155,7 @@ export function FootballLineups({
               onClick={() => {
                 setSide(s);
                 setQuery("");
+                setSubQuery("");
               }}
             >
               <Badge team={t} size={28} />
@@ -189,6 +197,7 @@ export function FootballLineups({
                     (s) => s.position,
                   );
                   update({
+                    ...lineup,
                     formation,
                     players: lineup.players.filter((p) =>
                       positions.includes(p.position),
@@ -289,6 +298,9 @@ export function FootballLineups({
                         onClick={() =>
                           update({
                             ...lineup,
+                            substitutes: substitutes.filter(
+                              (id) => id !== a.id,
+                            ),
                             players: [
                               ...lineup.players.filter(
                                 (p) =>
@@ -333,6 +345,72 @@ export function FootballLineups({
                   )}
               </div>
             </div>
+          </div>
+          <div className="substitute-picker">
+            <div className="match-section-title">
+              <h4>Substitutes</h4>
+              <span className="optional-tag">
+                {substitutes.length} selected
+              </span>
+            </div>
+            <p className="inline-help">
+              Choose the players on the bench for {team?.name}. Starting players
+              are excluded.
+            </p>
+            <label className="search-box">
+              <Search size={15} />
+              <input
+                aria-label={`Search ${side} substitutes`}
+                placeholder="Find a substitute…"
+                value={subQuery}
+                onChange={(e) => setSubQuery(e.target.value)}
+              />
+            </label>
+            <div
+              className="substitute-options"
+              role="group"
+              aria-label={`${side} substitutes`}
+            >
+              {benchCandidates
+                .filter((a) =>
+                  a.name.toLowerCase().includes(subQuery.toLowerCase()),
+                )
+                .map((a) => (
+                  <label className="substitute-option" key={a.id}>
+                    <input
+                      type="checkbox"
+                      aria-label={`Substitute ${a.name}`}
+                      checked={substitutes.includes(a.id)}
+                      onChange={(e) =>
+                        update({
+                          ...lineup,
+                          substitutes: e.target.checked
+                            ? [...substitutes, a.id]
+                            : substitutes.filter((id) => id !== a.id),
+                        })
+                      }
+                    />
+                    <Avatar athlete={a} size={32} />
+                    <span>
+                      <b>{a.name}</b>
+                      {a.jersey !== null && <small>#{a.jersey}</small>}
+                    </span>
+                  </label>
+                ))}
+            </div>
+            {!benchCandidates.length && (
+              <p className="lineup-empty">
+                No other players are available in this roster.
+              </p>
+            )}
+            {benchCandidates.length > 0 &&
+              !benchCandidates.some((a) =>
+                a.name.toLowerCase().includes(subQuery.toLowerCase()),
+              ) && (
+                <p className="lineup-empty">
+                  No substitutes match your search.
+                </p>
+              )}
           </div>
         </>
       )}
@@ -400,25 +478,25 @@ export function MatchLineups({
             athletes={d.athletes}
             label={`${side} ${lineup.formation} formation`}
           />
-          <ul className="lineup-roster">
-            {formationSlots(lineup.formation).map(({ position }) => {
-              const a = d.athletes.find(
-                (a) =>
-                  a.id ===
-                  lineup.players.find((p) => p.position === position)
-                    ?.athleteId,
-              );
-              return (
-                <li key={position}>
-                  <b>{position}</b>
-                  <span>{a?.name || "To be confirmed"}</span>
-                  {a?.jersey !== null && a?.jersey !== undefined && (
-                    <small>#{a.jersey}</small>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <div className="lineup-substitutes">
+            <h3>Substitutes</h3>
+            {lineup.substitutes?.length ? (
+              <ul className="lineup-roster">
+                {lineup.substitutes.map((id) => {
+                  const a = d.athletes.find((a) => a.id === id);
+                  return a ? (
+                    <li key={id}>
+                      <Avatar athlete={a} size={32} />
+                      <span>{a.name}</span>
+                      {a.jersey !== null && <small>#{a.jersey}</small>}
+                    </li>
+                  ) : null;
+                })}
+              </ul>
+            ) : (
+              <p className="inline-help">No substitutes listed.</p>
+            )}
+          </div>
         </>
       )}
     </section>

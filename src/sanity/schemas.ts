@@ -123,6 +123,12 @@ const lineupRecord = defineType({
   fields: [
     choice("formation", [...formationIds]),
     list("players", "lineupPlayer"),
+    defineField({
+      name: "substitutes",
+      type: "array",
+      of: [{ type: "string" }],
+      validation: (r) => r.max(100).unique(),
+    }),
   ],
 });
 const matchLineups = defineType({

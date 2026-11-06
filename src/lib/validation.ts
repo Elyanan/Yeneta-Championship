@@ -52,6 +52,17 @@ export function validateMatch(m: Match, d: Championship) {
     for (const side of ["home", "away"] as const) {
       const lineup = m.lineups[side];
       if (!lineup) continue;
+      const substitutes = lineup.substitutes || [];
+      requireThat(
+        new Set(substitutes).size === substitutes.length,
+        "Substitutes can only be listed once.",
+      );
+      requireThat(
+        !substitutes.some((id) =>
+          lineup.players.some((p) => p.athleteId === id),
+        ),
+        "A starting player cannot also be listed as a substitute.",
+      );
       const slots = formationSlots(lineup.formation).map((s) => s.position);
       requireThat(
         new Set(lineup.players.map((p) => p.position)).size ===
@@ -68,15 +79,20 @@ export function validateMatch(m: Match, d: Championship) {
           slots.includes(p.position),
           "Choose a position in the selected formation.",
         );
+      }
+      for (const athleteId of [
+        ...lineup.players.map((p) => p.athleteId),
+        ...substitutes,
+      ]) {
         requireThat(
           d.athletes.some(
             (a) =>
-              a.id === p.athleteId &&
+              a.id === athleteId &&
               a.teamId === (side === "home" ? m.homeId : m.awayId) &&
               a.division === m.division &&
               a.sports.includes("football"),
           ),
-          "Lineup players must belong to the correct football roster and division.",
+          "Lineup players and substitutes must belong to the correct football roster and division.",
         );
       }
     }
