@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useId, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   athleteSchema,
@@ -13,29 +13,69 @@ import {
 } from "@/types/championship";
 import type { Operation } from "@/lib/operations";
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "@/components/image-fallback";
 export type SaveOperation = (op: Operation) => Promise<void>;
 export function MediaUpload({
   value,
   onChange,
   label = "Upload image",
+  removable = false,
+  disabled = false,
+  onBusyChange,
 }: {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  removable?: boolean;
+  disabled?: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
+  const labelId = useId();
   return (
     <div className="field">
-      <span>{label}</span>
+      <span id={labelId}>{label}</span>
+      {value && (
+        <div className="media-upload-preview">
+          <div className="media-upload-thumbnail">
+            <ImageWithFallback
+              key={value}
+              src={value}
+              alt={`${label} preview`}
+              size={112}
+              contain
+              fallback={<span>Preview unavailable</span>}
+            />
+          </div>
+          {removable && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy || disabled}
+              onClick={() => {
+                onChange("");
+                setError("");
+                if (fileInput.current) fileInput.current.value = "";
+              }}
+            >
+              Remove photo
+            </Button>
+          )}
+        </div>
+      )}
       <input
+        ref={fileInput}
+        aria-labelledby={labelId}
         type="file"
         accept="image/png,image/jpeg,image/webp,image/avif"
-        disabled={busy}
+        disabled={busy || disabled}
         onChange={async (e) => {
           const file = e.target.files?.[0];
           if (!file) return;
           setBusy(true);
+          onBusyChange?.(true);
           setError("");
           const f = new FormData();
           f.set("file", file);
@@ -51,6 +91,8 @@ export function MediaUpload({
             setError(e instanceof Error ? e.message : "Upload failed.");
           } finally {
             setBusy(false);
+            onBusyChange?.(false);
+            if (fileInput.current) fileInput.current.value = "";
           }
         }}
       />
@@ -91,6 +133,7 @@ export function TeamForm({
       active: true,
     },
   });
+  const logo = useWatch({ control: f.control, name: "logo" });
   return (
     <form
       onSubmit={f.handleSubmit(async (value) => {
@@ -133,8 +176,10 @@ export function TeamForm({
         </select>
       </label>
       <MediaUpload
-        value={f.getValues("logo")}
-        onChange={(url) => f.setValue("logo", url)}
+        value={logo}
+        onChange={(url) =>
+          f.setValue("logo", url, { shouldDirty: true, shouldValidate: true })
+        }
         label="Class logo"
       />
       <label className="check-row">
@@ -168,7 +213,8 @@ export function AthleteForm({
   data: Championship;
   save: SaveOperation;
 }) {
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""),
+    [photoBusy, setPhotoBusy] = useState(false);
   const f = useForm<Athlete>({
     resolver: zodResolver(athleteSchema),
     defaultValues: athlete || {
@@ -185,6 +231,7 @@ export function AthleteForm({
       active: true,
     },
   });
+  const photo = useWatch({ control: f.control, name: "photo" });
   return (
     <form
       onSubmit={f.handleSubmit(async (value) => {
@@ -243,10 +290,16 @@ export function AthleteForm({
         />
       </label>
       <MediaUpload
-        value={f.getValues("photo")}
-        onChange={(url) => f.setValue("photo", url)}
+        value={photo}
+        onChange={(url) =>
+          f.setValue("photo", url, { shouldDirty: true, shouldValidate: true })
+        }
         label="Athlete photo"
+        removable
+        disabled={f.formState.isSubmitting}
+        onBusyChange={setPhotoBusy}
       />
+      <p className="inline-help">Save the athlete to apply photo changes.</p>
       <label className="check-row">
         <input type="checkbox" {...f.register("active")} />
         Active athlete
@@ -267,8 +320,12 @@ export function AthleteForm({
         </p>
       )}
       <div className="form-actions">
-        <Button disabled={f.formState.isSubmitting}>
-          {f.formState.isSubmitting ? "Saving…" : "Save athlete"}
+        <Button disabled={f.formState.isSubmitting || photoBusy}>
+          {photoBusy
+            ? "Uploading photo…"
+            : f.formState.isSubmitting
+              ? "Saving…"
+              : "Save athlete"}
         </Button>
       </div>
     </form>

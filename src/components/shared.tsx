@@ -123,6 +123,7 @@ export function MatchCard({
       <div className="match-meta">
         <span>
           {m.sport.replace("-", " ")} · {m.division}
+          {m.friendly && " · Friendly"}
         </span>
         <span>{m.status === "scheduled" ? "UPCOMING" : "FULL TIME"}</span>
       </div>

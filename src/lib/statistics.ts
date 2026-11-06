@@ -8,7 +8,7 @@ import type {
 } from "@/types/championship";
 export const chronological = (a: Match, b: Match) =>
   a.date.localeCompare(b.date) || a.id.localeCompare(b.id);
-export function relevant(
+export function completedMatches(
   data: Championship,
   sport?: Sport,
   division?: Division,
@@ -23,6 +23,17 @@ export function relevant(
         (!division || m.division === division),
     )
     .sort(chronological);
+}
+// Official competition statistics exclude friendlies, but result histories do not.
+export function relevant(
+  data: Championship,
+  sport?: Sport,
+  division?: Division,
+  season = data.settings.activeSeasonId,
+) {
+  return completedMatches(data, sport, division, season).filter(
+    (m) => !m.friendly,
+  );
 }
 export type Standing = {
   team: Team;

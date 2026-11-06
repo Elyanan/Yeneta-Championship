@@ -100,6 +100,7 @@ export const matchSchema = z.object({
   goals: z.array(goalSchema).max(200),
   outcome: z.enum(["home", "away", "draw"]),
   status: z.enum(["scheduled", "completed", "void"]),
+  friendly: z.boolean().optional(),
   lineups: z
     .object({ home: lineupSchema.optional(), away: lineupSchema.optional() })
     .optional(),

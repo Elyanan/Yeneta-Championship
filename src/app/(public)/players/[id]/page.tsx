@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { publicSnapshot } from "@/lib/sanity";
 import { Avatar, Badge, MatchCard, Empty } from "@/components/shared";
-import { contributions, rankings, relevant } from "@/lib/statistics";
+import { contributions, rankings, completedMatches } from "@/lib/statistics";
 import { sportNames } from "@/types/championship";
 export async function generateMetadata({
   params,
@@ -23,7 +23,7 @@ export default async function AthletePage({
     a = d.athletes.find((a) => a.id === id);
   if (!a) notFound();
   const t = d.teams.find((t) => t.id === a.teamId)!,
-    matches = relevant(d, undefined, a.division, t.seasonId).filter(
+    matches = completedMatches(d, undefined, a.division, t.seasonId).filter(
       (m) =>
         [m.homeId, m.awayId].includes(id) ||
         m.goals.some((g) => g.scorerId === id || g.assistId === id),

@@ -1126,6 +1126,26 @@ abbr {
 .field small {
   font-weight: 400;
 }
+.media-upload-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-block: 4px 10px;
+}
+.media-upload-thumbnail {
+  width: 114px;
+  height: 114px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
 .field-error {
   font-size: 11px;
   color: #c95757;

@@ -164,6 +164,12 @@ const matchRecord = defineType({
     list("goals", "goalEvent"),
     choice("outcome", ["home", "away", "draw"]),
     choice("status", ["scheduled", "completed", "void"]),
+    defineField({
+      name: "friendly",
+      title: "Friendly match (no league points)",
+      type: "boolean",
+      initialValue: false,
+    }),
     defineField({ name: "lineups", type: "matchLineups" }),
     defineField({
       name: "media",

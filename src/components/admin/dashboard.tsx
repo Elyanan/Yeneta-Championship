@@ -28,7 +28,7 @@ import {
   sports,
   sportNames,
 } from "@/types/championship";
-import { relevant } from "@/lib/statistics";
+import { completedMatches, relevant } from "@/lib/statistics";
 import { Badge, Avatar, Empty } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -119,7 +119,10 @@ export function AdminDashboard({
   const matchRows = [...matches]
     .filter(
       (m) =>
-        (matchStatus === "all" || m.status === matchStatus) &&
+        (matchStatus === "all" ||
+          (matchStatus === "friendly"
+            ? m.friendly
+            : m.status === matchStatus)) &&
         (sport === "all" || m.sport === sport) &&
         (division === "all" || m.division === division) &&
         `${name(m.homeId)} ${name(m.awayId)}`
@@ -215,7 +218,10 @@ export function AdminDashboard({
                   label: "Active classes",
                   value: activeTeams.filter((t) => t.active).length,
                 },
-                { label: "Matches recorded", value: relevant(d).length },
+                {
+                  label: "Matches recorded",
+                  value: completedMatches(d).length,
+                },
                 {
                   label: "Football goals",
                   value: relevant(d, "football").reduce(
@@ -304,6 +310,7 @@ export function AdminDashboard({
                     <option value="all">All matches</option>
                     <option value="scheduled">Scheduled</option>
                     <option value="completed">Completed</option>
+                    <option value="friendly">Friendlies</option>
                     <option value="void">Voided</option>
                   </select>
                 )}
@@ -457,8 +464,9 @@ export function AdminDashboard({
                                 : m.status === "void"
                                   ? "Voided"
                                   : "Completed"}
-                            </span>{" "}
-                            · {sportNames[m.sport]} · {m.division} ·{" "}
+                            </span>
+                            {m.friendly && " · Friendly"} ·{" "}
+                            {sportNames[m.sport]} · {m.division} ·{" "}
                             {new Date(m.date).toLocaleString("en", {
                               dateStyle: "medium",
                               timeStyle: "short",

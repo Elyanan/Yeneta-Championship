@@ -107,6 +107,10 @@ The **Record match** action is available throughout administration:
 
 Open `/admin/matches` to search, filter, correct or delete results. Deletion requires an explicit confirmation. All statistics are recalculated after a change. Match IDs and the shared revision guard protect against duplicate retries; concurrent stale edits are rejected with a reload instruction. No direct point increments are available.
 
+### Football friendlies
+
+To record the opening friendly, use **Record match**, choose Football, and tick **Friendly match (no league points)**. Enter the participants, date, final score and goal events as usual. The same option is available when scheduling a future game or editing an existing result. Friendlies appear with a clear label in match results, recent results, team/player histories and match exports; the match centre also has a **Friendlies** filter. They never affect official league played/won/drawn/lost totals, points, goals for/against, goal difference, form, or goal/assist rankings. Existing records without this option remain competitive matches.
+
 ### Schedule fixtures, formations and match media
 
 Use **Schedule match** in administration to choose a future kickoff, sport, division, season and participants. Scheduled fixtures appear in the public match centre under **Upcoming fixtures** and do not affect standings, form or player records. After the game, edit the fixture, choose **Completed result**, and record the final score and events. Future completed results remain blocked.

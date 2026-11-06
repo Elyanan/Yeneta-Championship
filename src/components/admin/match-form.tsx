@@ -92,6 +92,7 @@ export function MatchForm({
       goals: [],
       outcome: "draw",
       lineups: undefined,
+      friendly: v.sport && v.sport !== "football" ? false : m.friendly,
     });
     setMinuteErrors({});
   }
@@ -185,11 +186,23 @@ export function MatchForm({
           </select>
         </label>
         <p>
-          {scheduled
-            ? "Plan the next game. No score is required, and standings stay unchanged until you record the result."
-            : "Record the final score after the match. Standings and player statistics update automatically."}
+          {m.friendly
+            ? "A friendly is shown in match results without affecting league standings, points, form, goals or assist rankings."
+            : scheduled
+              ? "Plan the next game. No score is required, and standings stay unchanged until you record the result."
+              : "Record the final score after the match. Standings and player statistics update automatically."}
         </p>
       </div>
+      {m.sport === "football" && (
+        <label className="check-row mb-5">
+          <input
+            type="checkbox"
+            checked={Boolean(m.friendly)}
+            onChange={(e) => patch({ friendly: e.target.checked })}
+          />{" "}
+          Friendly match (no league points)
+        </label>
+      )}
       <div className="form-grid">
         <label className="field">
           Sport

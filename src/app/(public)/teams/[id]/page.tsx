@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { publicSnapshot } from "@/lib/sanity";
-import { standings, relevant } from "@/lib/statistics";
+import { standings, completedMatches } from "@/lib/statistics";
 import { Badge, Avatar, Empty, MatchCard } from "@/components/shared";
 export async function generateMetadata({
   params,
@@ -117,7 +117,7 @@ export default async function TeamPage({
       <section className="section-space">
         <h2 className="mb-6">Recent results</h2>
         <div className="results-grid">
-          {relevant(d, undefined, undefined, t.seasonId)
+          {completedMatches(d, undefined, undefined, t.seasonId)
             .filter(
               (m) =>
                 [m.homeId, m.awayId].includes(id) ||
@@ -131,7 +131,7 @@ export default async function TeamPage({
               <MatchCard key={m.id} match={m} data={d} />
             ))}
         </div>
-        {!relevant(d, undefined, undefined, t.seasonId).some(
+        {!completedMatches(d, undefined, undefined, t.seasonId).some(
           (m) =>
             [m.homeId, m.awayId].includes(id) ||
             d.athletes.some(

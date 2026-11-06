@@ -17,7 +17,8 @@ export function MatchCentre({ data: d }: { data: Championship }) {
       (m) =>
         m.seasonId === d.settings.activeSeasonId &&
         m.status !== "void" &&
-        (view === "all" || m.status === view) &&
+        (view === "all" ||
+          (view === "friendly" ? m.friendly : m.status === view)) &&
         (sport === "all" || m.sport === sport) &&
         (division === "all" || m.division === division) &&
         `${name(m.homeId)} ${name(m.awayId)}`
@@ -40,6 +41,7 @@ export function MatchCentre({ data: d }: { data: Championship }) {
           { id: "all", label: "All matches" },
           { id: "scheduled", label: "Upcoming fixtures" },
           { id: "completed", label: "Results" },
+          { id: "friendly", label: "Friendlies" },
         ].map((v) => (
           <button
             key={v.id}

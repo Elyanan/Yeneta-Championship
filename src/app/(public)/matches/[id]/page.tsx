@@ -31,6 +31,12 @@ export default async function MatchPage({
       </div>
       <div className="max-w-2xl mx-auto">
         <MatchCard match={m} data={d} />
+        {m.friendly && (
+          <p className="notice">
+            Friendly match. This result does not count toward league standings,
+            points, form or player goal and assist rankings.
+          </p>
+        )}
         {m.status === "scheduled" && (
           <p className="notice">
             Kickoff:{" "}

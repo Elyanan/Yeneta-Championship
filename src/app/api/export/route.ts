@@ -1,5 +1,10 @@
 import { publicSnapshot } from "@/lib/sanity";
-import { standings, rankings, contributions, relevant } from "@/lib/statistics";
+import {
+  standings,
+  rankings,
+  contributions,
+  completedMatches,
+} from "@/lib/statistics";
 import { csv } from "@/lib/csv";
 import { divisionSchema, sportSchema } from "@/types/championship";
 export async function GET(request: Request) {
@@ -51,8 +56,9 @@ export async function GET(request: Request) {
         "Home score",
         "Away score",
         "Outcome",
+        "Match category",
       ],
-      ...relevant(d).map((m) => [
+      ...completedMatches(d).map((m) => [
         m.id,
         m.date,
         m.sport,
@@ -62,6 +68,7 @@ export async function GET(request: Request) {
         m.homeScore,
         m.awayScore,
         m.outcome,
+        m.friendly ? "Friendly" : "Competitive",
       ]),
     ];
   else if (kind === "goals" || kind === "assists")

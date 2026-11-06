@@ -24,7 +24,13 @@ import {
   type Sport,
   type Division,
 } from "@/types/championship";
-import { contributions, rankings, relevant, standings } from "@/lib/statistics";
+import {
+  contributions,
+  rankings,
+  relevant,
+  standings,
+  completedMatches,
+} from "@/lib/statistics";
 import { Badge, Avatar, Empty, MatchCard, TeamCard } from "./shared";
 const icons = {
   football: CircleDot,
@@ -47,7 +53,8 @@ export function ChampionshipView({
   const season = d.seasons.find((s) => s.id === d.settings.activeSeasonId)!;
   const teams = d.teams.filter((t) => t.active && t.seasonId === season.id),
     matches = relevant(d, sport, division),
-    allMatches = relevant(d),
+    recentMatches = completedMatches(d, sport, division),
+    allMatches = completedMatches(d),
     athletes = d.athletes.filter(
       (a) => a.active && teams.some((t) => t.id === a.teamId),
     );
@@ -461,8 +468,8 @@ export function ChampionshipView({
                       <ArrowUpRight size={20} />
                     </Link>
                   </div>
-                  {matches.length ? (
-                    matches
+                  {recentMatches.length ? (
+                    recentMatches
                       .slice(-3)
                       .reverse()
                       .map((m) => <MatchCard key={m.id} match={m} data={d} />)

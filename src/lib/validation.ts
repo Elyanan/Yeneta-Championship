@@ -9,6 +9,10 @@ function requireThat(condition: unknown, message: string): asserts condition {
   if (!condition) throw new DomainError(message);
 }
 export function validateMatch(m: Match, d: Championship) {
+  requireThat(
+    !m.friendly || m.sport === "football",
+    "Friendly matches are only available for football.",
+  );
   requireThat(m.homeId !== m.awayId, "Choose two different participants.");
   const season = d.seasons.find((s) => s.id === m.seasonId);
   requireThat(season, "Season does not exist.");
