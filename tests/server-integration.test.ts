@@ -330,6 +330,7 @@ describe("server authorization and persistent operations", () => {
             lineups: {
               home: {
                 formation: "4-3-3",
+                captainId: "a",
                 players: [{ position: "GK", athleteId: "a" }],
               },
             },
@@ -353,6 +354,7 @@ describe("server authorization and persistent operations", () => {
       "a",
     );
     expect(reloaded.data.matches[0].media[0].kind).toBe("video");
+    expect(reloaded.data.matches[0].lineups.home.captainId).toBe("a");
     expect(memory.invalidations).toContainEqual([
       "championship",
       { expire: 0 },

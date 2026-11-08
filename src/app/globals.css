@@ -2432,6 +2432,22 @@ button.pitch-position:hover {
 .pitch-shirt.assigned b {
   color: #183627;
 }
+.pitch-captain {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  background: #f4cc62;
+  color: #183627;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
 .pitch-player-name {
   font-size: clamp(8px, 1.8vw, 10px);
   font-weight: 700;

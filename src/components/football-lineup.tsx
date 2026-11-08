@@ -47,11 +47,17 @@ export function LineupPitch({
             a.id ===
             lineup.players.find((p) => p.position === position)?.athleteId,
         );
+        const isCaptain = !!athlete && lineup.captainId === athlete.id;
         const content = (
           <>
             <span className={`pitch-shirt ${athlete ? "assigned" : ""}`}>
               <Shirt aria-hidden="true" />
               <b>{athlete ? (athlete.jersey ?? "•") : <Plus size={14} />}</b>
+              {isCaptain && (
+                <span className="pitch-captain" aria-label="Captain">
+                  C
+                </span>
+              )}
             </span>
             <span className="pitch-player-name">
               {athlete ? athlete.name.trim().split(/\s+/)[0] : position}
@@ -66,7 +72,7 @@ export function LineupPitch({
             type="button"
             style={style}
             className={`pitch-position ${selected === position ? "selected" : ""}`}
-            aria-label={`${position}: ${athlete?.name || "Choose player"}`}
+            aria-label={`${position}: ${athlete?.name || "Choose player"}${isCaptain ? ", Captain" : ""}`}
             aria-pressed={selected === position}
             onClick={() => onSelect(position)}
           >
@@ -77,7 +83,7 @@ export function LineupPitch({
             key={position}
             style={style}
             className="pitch-position"
-            title={`${position}: ${athlete?.name || "Unassigned"}`}
+            title={`${position}: ${athlete?.name || "Unassigned"}${isCaptain ? ", Captain" : ""}`}
           >
             {content}
           </div>
@@ -134,7 +140,16 @@ export function FootballLineups({
   const update = (value: Lineup | undefined) => {
     const next = {
       ...m.lineups,
-      [side]: value ? reconcileSubstitutions(value) : undefined,
+      [side]: value
+        ? reconcileSubstitutions({
+            ...value,
+            captainId: value.players.some(
+              (p) => p.athleteId === value.captainId,
+            )
+              ? value.captainId
+              : undefined,
+          })
+        : undefined,
     };
     onChange(next.home || next.away ? next : undefined);
   };
@@ -236,6 +251,31 @@ export function FootballLineups({
               <X size={14} /> Remove lineup
             </button>
           </div>
+          <label className="field">
+            Captain
+            <select
+              value={lineup.captainId || ""}
+              disabled={!lineup.players.length}
+              onChange={(e) =>
+                update({ ...lineup, captainId: e.target.value || undefined })
+              }
+            >
+              <option value="">No captain selected</option>
+              {lineup.players.map((p) => {
+                const a = eligible.find((a) => a.id === p.athleteId);
+                return a ? (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                    {a.jersey !== null ? ` · #${a.jersey}` : ""}
+                  </option>
+                ) : null;
+              })}
+            </select>
+            <small className="inline-help">
+              Choose from the starting lineup. The captain wears C on the
+              formation.
+            </small>
+          </label>
           <div className="lineup-progress">
             <span>
               {lineup.players.length} /{" "}

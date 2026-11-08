@@ -122,6 +122,7 @@ const lineupRecord = defineType({
   type: "object",
   fields: [
     choice("formation", [...formationIds]),
+    text("captainId", false),
     list("players", "lineupPlayer"),
     defineField({
       name: "substitutions",

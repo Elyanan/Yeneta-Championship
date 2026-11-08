@@ -16,6 +16,48 @@ const scheduled = () =>
     outcome: "draw",
   });
 describe("match scheduling, lineups and media", () => {
+  it("persists separate optional captains for both teams", () => {
+    const value = {
+      ...scheduled(),
+      lineups: {
+        home: {
+          formation: "4-3-3" as const,
+          captainId: "a",
+          players: [{ position: "GK", athleteId: "a" }],
+        },
+        away: {
+          formation: "4-4-2" as const,
+          captainId: "c",
+          players: [{ position: "GK", athleteId: "c" }],
+        },
+      },
+    };
+    const saved = applyOperation(fixture(), { kind: "match", value });
+    expect(validateState(storageShape(saved)).matches[0].lineups).toEqual(
+      value.lineups,
+    );
+  });
+  it.each(["b", "c", "missing"])(
+    "rejects captain %s who is not in the starting lineup",
+    (captainId) => {
+      expect(() =>
+        applyOperation(fixture(), {
+          kind: "match",
+          value: {
+            ...scheduled(),
+            lineups: {
+              home: {
+                formation: "4-3-3",
+                captainId,
+                players: [{ position: "GK", athleteId: "a" }],
+                substitutes: ["b"],
+              },
+            },
+          },
+        }),
+      ).toThrow("captain must be a player in the starting lineup");
+    },
+  );
   it.each(["football", "volleyball", "chess", "table-tennis"] as const)(
     "allows a future %s fixture without a result",
     (sport) => {

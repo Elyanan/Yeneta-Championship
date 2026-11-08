@@ -55,6 +55,11 @@ export function validateMatch(m: Match, d: Championship) {
       if (!lineup) continue;
       const substitutes = lineup.substitutes || [];
       requireThat(
+        !lineup.captainId ||
+          lineup.players.some((p) => p.athleteId === lineup.captainId),
+        "The captain must be a player in the starting lineup.",
+      );
+      requireThat(
         new Set(substitutes).size === substitutes.length,
         "Substitutes can only be listed once.",
       );
