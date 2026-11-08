@@ -90,8 +90,112 @@ describe("football friendlies", () => {
     expect(() =>
       applyOperation(fixture(), {
         kind: "match",
-        value: match({ friendly: true, sport: "volleyball", goals: [] }),
+        value: match({
+          friendly: true,
+          sport: "chess",
+          homeId: "a",
+          awayId: "c",
+          goals: [],
+        }),
       }),
     ).toThrow("only available for football");
+  });
+});
+
+describe("volleyball friendlies", () => {
+  it.each(["boys", "girls"] as const)(
+    "keeps %s friendly results in histories without changing league statistics",
+    (division) => {
+      const d = fixture();
+      const competitive = match({
+        sport: "volleyball",
+        division,
+        goals: [],
+        homeScore: 3,
+        awayScore: 1,
+      });
+      d.matches = [competitive];
+      const before = standings(d, "volleyball", division);
+      const saved = applyOperation(d, {
+        kind: "match",
+        value: {
+          ...competitive,
+          id: "volleyball-friendly",
+          friendly: true,
+          homeScore: 1,
+          awayScore: 3,
+          outcome: "away",
+        },
+      });
+      expect(standings(saved, "volleyball", division)).toEqual(before);
+      expect(
+        completedMatches(saved, "volleyball", division).map((m) => m.id),
+      ).toContain("volleyball-friendly");
+      expect(relevant(saved, "volleyball", division).map((m) => m.id)).toEqual([
+        competitive.id,
+      ]);
+      expect(validateState(storageShape(saved))).toEqual(saved);
+    },
+  );
+  it("schedules a volleyball friendly, records its result and can change it to competitive", () => {
+    let saved = applyOperation(fixture(), {
+      kind: "match",
+      value: match({
+        sport: "volleyball",
+        friendly: true,
+        status: "scheduled",
+        date: new Date(Date.now() + 86_400_000).toISOString(),
+        homeScore: 0,
+        awayScore: 0,
+        goals: [],
+        outcome: "draw",
+      }),
+    });
+    expect(saved.matches[0].friendly).toBe(true);
+    expect(completedMatches(saved)).toEqual([]);
+    saved = applyOperation(saved, {
+      kind: "match",
+      value: {
+        ...saved.matches[0],
+        status: "completed",
+        date: match().date,
+        homeScore: 3,
+        awayScore: 1,
+        outcome: "home",
+      },
+    });
+    expect(completedMatches(saved)).toHaveLength(1);
+    expect(standings(saved, "volleyball", "boys")).toEqual(
+      standings(fixture(), "volleyball", "boys"),
+    );
+    saved = applyOperation(saved, {
+      kind: "match",
+      value: { ...saved.matches[0], friendly: false },
+    });
+    expect(standings(saved, "volleyball", "boys")[0].points).toBe(
+      saved.settings.volleyballWin,
+    );
+  });
+  it("still rejects tied volleyball results and invalid set totals", () => {
+    const d = fixture();
+    d.settings.volleyballMaxSets = 3;
+    for (const [homeScore, awayScore] of [
+      [1, 1],
+      [100, 0],
+    ]) {
+      expect(() =>
+        applyOperation(d, {
+          kind: "match",
+          value: match({
+            sport: "volleyball",
+            friendly: true,
+            goals: [],
+            homeScore,
+            awayScore,
+            outcome: homeScore === awayScore ? "draw" : "home",
+          }),
+        }),
+      ).toThrow();
+    }
   });
 });

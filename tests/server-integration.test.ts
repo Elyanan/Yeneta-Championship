@@ -280,25 +280,37 @@ describe("server authorization and persistent operations", () => {
       ).status,
     ).toBe(410);
   });
-  it("persists a friendly and includes it in match exports without scoring rankings", async () => {
-    await authenticate();
-    const response = await write(
-      post("/api/admin", {
-        revision: "1",
-        operation: { kind: "match", value: match({ friendly: true }) },
-      }),
-    );
-    expect(response.status).toBe(200);
-    expect((await (await read()).json()).data.matches[0].friendly).toBe(true);
-    const results = await exportCsv(
-      new Request(origin + "/api/export?kind=matches"),
-    );
-    expect(await results.text()).toContain('"Friendly"');
-    const scorers = await exportCsv(
-      new Request(origin + "/api/export?kind=goals"),
-    );
-    expect(await scorers.text()).not.toContain("Test athlete a");
-  });
+  it.each(["football", "volleyball"] as const)(
+    "persists a %s friendly and includes it in match exports without scoring rankings",
+    async (sport) => {
+      await authenticate();
+      const response = await write(
+        post("/api/admin", {
+          revision: "1",
+          operation: {
+            kind: "match",
+            value: match({
+              friendly: true,
+              sport,
+              ...(sport === "volleyball"
+                ? { homeScore: 3, awayScore: 1, goals: [] }
+                : {}),
+            }),
+          },
+        }),
+      );
+      expect(response.status).toBe(200);
+      expect((await (await read()).json()).data.matches[0].friendly).toBe(true);
+      const results = await exportCsv(
+        new Request(origin + "/api/export?kind=matches"),
+      );
+      expect(await results.text()).toContain('"Friendly"');
+      const scorers = await exportCsv(
+        new Request(origin + "/api/export?kind=goals"),
+      );
+      expect(await scorers.text()).not.toContain("Test athlete a");
+    },
+  );
   it.each(["chess", "table-tennis"])(
     "exports %s match records without a rating column",
     async (sport) => {

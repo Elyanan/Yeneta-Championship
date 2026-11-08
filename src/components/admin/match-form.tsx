@@ -92,7 +92,10 @@ export function MatchForm({
       goals: [],
       outcome: "draw",
       lineups: undefined,
-      friendly: v.sport && v.sport !== "football" ? false : m.friendly,
+      friendly:
+        v.sport && !["football", "volleyball"].includes(v.sport)
+          ? false
+          : m.friendly,
     });
     setMinuteErrors({});
   }
@@ -193,7 +196,7 @@ export function MatchForm({
               : "Record the final score after the match. Standings and player statistics update automatically."}
         </p>
       </div>
-      {m.sport === "football" && (
+      {isTeam && (
         <label className="check-row mb-5">
           <input
             type="checkbox"
@@ -550,8 +553,10 @@ export function MatchForm({
       )}
       {m.sport === "volleyball" && !scheduled && (
         <p className="notice">
-          Win = {d.settings.volleyballWin} points · loss = 0 points. The winning
-          team must have more sets.
+          {m.friendly
+            ? "Friendly result: no league points are awarded."
+            : `Win = ${d.settings.volleyballWin} points · loss = 0 points.`}{" "}
+          The winning team must have more sets.
           {d.settings.volleyballMaxSets
             ? ` Maximum ${d.settings.volleyballMaxSets} sets per team.`
             : ""}

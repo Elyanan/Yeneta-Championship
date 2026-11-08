@@ -107,9 +107,9 @@ The **Record match** action is available throughout administration:
 
 Open `/admin/matches` to search, filter, correct or delete results. Deletion requires an explicit confirmation. All statistics are recalculated after a change. Match IDs and the shared revision guard protect against duplicate retries; concurrent stale edits are rejected with a reload instruction. No direct point increments are available.
 
-### Football friendlies
+### Football and volleyball friendlies
 
-To record the opening friendly, use **Record match**, choose Football, and tick **Friendly match (no league points)**. Enter the participants, date, final score and goal events as usual. The same option is available when scheduling a future game or editing an existing result. Friendlies appear with a clear label in match results, recent results, team/player histories and match exports; the match centre also has a **Friendlies** filter. They never affect official league played/won/drawn/lost totals, points, goals for/against, goal difference, form, or goal/assist rankings. Existing records without this option remain competitive matches.
+To record a friendly, use **Record match**, choose Football or Volleyball, and tick **Friendly match (no league points)**. Enter the participants, date and final score as usual, with goal events for football or sets for volleyball. The same option is available when scheduling a future game or editing an existing result. Friendlies appear with a clear label in match results, recent results, team/player histories and match exports; the match centre also has a **Friendlies** filter. They never affect official league played/won/drawn/lost totals, points, goals/sets for and against, goal difference, form, or goal/assist rankings. Existing records without this option remain competitive matches.
 
 ### Schedule fixtures, formations and match media
 

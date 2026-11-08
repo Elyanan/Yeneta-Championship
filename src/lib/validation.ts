@@ -11,8 +11,8 @@ function requireThat(condition: unknown, message: string): asserts condition {
 }
 export function validateMatch(m: Match, d: Championship) {
   requireThat(
-    !m.friendly || m.sport === "football",
-    "Friendly matches are only available for football.",
+    !m.friendly || m.sport === "football" || m.sport === "volleyball",
+    "Friendly matches are only available for football and volleyball.",
   );
   requireThat(m.homeId !== m.awayId, "Choose two different participants.");
   const season = d.seasons.find((s) => s.id === m.seasonId);
