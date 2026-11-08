@@ -8,7 +8,13 @@ import {
   Trophy,
   CalendarDays,
 } from "lucide-react";
-import type { Athlete, Championship, Match, Team } from "@/types/championship";
+import {
+  sportNames,
+  type Athlete,
+  type Championship,
+  type Match,
+  type Team,
+} from "@/types/championship";
 export function Badge({
   team,
   size = 40,
@@ -122,11 +128,15 @@ export function MatchCard({
     <Link href={`/matches/${m.id}`} className="match-card">
       <div className="match-meta">
         <span>
-          {m.sport.replace("-", " ")} · {m.division}
-          {m.friendly && " · Friendly"}
+          {sportNames[m.sport]} · {m.division === "boys" ? "Boys" : "Girls"}
         </span>
         <span>{m.status === "scheduled" ? "UPCOMING" : "FULL TIME"}</span>
       </div>
+      {m.friendly && (
+        <span className="match-friendly-label">
+          Friendly game · No league points
+        </span>
+      )}
       <div className="match-score">
         <div>
           {teamSport && <Badge team={home} />}

@@ -909,6 +909,16 @@ abbr {
 .match-card:hover {
   border-color: var(--green);
 }
+.match-friendly-label {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 700;
+}
 .match-meta {
   display: flex;
   justify-content: space-between;
@@ -2608,6 +2618,53 @@ button.pitch-position:hover {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 20px;
+}
+.match-groups {
+  display: grid;
+  gap: 48px;
+}
+.match-group-heading {
+  margin-bottom: 24px;
+}
+.match-group-heading h2 {
+  font-size: clamp(24px, 4vw, 32px);
+  margin-top: 6px;
+}
+.match-group-heading p {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 8px;
+}
+.match-group-friendly {
+  border-top: 2px solid var(--line);
+  padding-top: 32px;
+}
+.match-division + .match-division {
+  margin-top: 32px;
+}
+.match-division > h3 {
+  border-left: 3px solid var(--green);
+  padding-left: 12px;
+  font-size: 21px;
+  margin-bottom: 20px;
+}
+.match-sport + .match-sport {
+  margin-top: 20px;
+}
+.match-sport-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.match-sport-heading h4 {
+  font-size: 15px;
+}
+.match-sport-heading > span {
+  color: var(--muted);
+  font-size: 11px;
 }
 .match-centre-tabs button {
   border: 1px solid var(--line);

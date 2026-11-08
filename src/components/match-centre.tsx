@@ -1,6 +1,11 @@
 "use client";
 import { useState } from "react";
-import { sports, sportNames, type Championship } from "@/types/championship";
+import {
+  sports,
+  sportNames,
+  type Championship,
+  type Match,
+} from "@/types/championship";
 import { MatchCard, Empty } from "./shared";
 import { chronological } from "@/lib/statistics";
 export function MatchCentre({ data: d }: { data: Championship }) {
@@ -85,10 +90,20 @@ export function MatchCentre({ data: d }: { data: Championship }) {
         </label>
       </div>
       {matches.length ? (
-        <div className="results-grid">
-          {matches.map((m) => (
-            <MatchCard key={m.id} match={m} data={d} />
-          ))}
+        <div className="match-groups">
+          {[false, true].map((friendly) => {
+            const group = matches.filter(
+              (m) => Boolean(m.friendly) === friendly,
+            );
+            return group.length ? (
+              <MatchGroup
+                key={String(friendly)}
+                matches={group}
+                data={d}
+                friendly={friendly}
+              />
+            ) : null;
+          })}
         </div>
       ) : (
         <div className="panel">
@@ -100,5 +115,73 @@ export function MatchCentre({ data: d }: { data: Championship }) {
         </div>
       )}
     </>
+  );
+}
+
+function MatchGroup({
+  matches,
+  data,
+  friendly,
+}: {
+  matches: Match[];
+  data: Championship;
+  friendly: boolean;
+}) {
+  const title = friendly ? "Friendly games" : "Championship games";
+  return (
+    <section
+      className={`match-group${friendly ? " match-group-friendly" : ""}`}
+      aria-label={title}
+    >
+      <header className="match-group-heading">
+        <span className="eyebrow accent">
+          {friendly ? "FRIENDLIES" : "THE CHAMPIONSHIP"}
+        </span>
+        <h2>{title}</h2>
+        {friendly && (
+          <p>Friendly games do not affect league standings or points.</p>
+        )}
+      </header>
+      {(["boys", "girls"] as const).map((division) => {
+        const divisionMatches = matches.filter((m) => m.division === division);
+        if (!divisionMatches.length) return null;
+        const divisionTitle =
+          division === "boys" ? "Boys’ games" : "Girls’ games";
+        return (
+          <section
+            className="match-division"
+            aria-label={`${title}: ${divisionTitle}`}
+            key={division}
+          >
+            <h3>{divisionTitle}</h3>
+            {sports.map((sport) => {
+              const sportMatches = divisionMatches.filter(
+                (m) => m.sport === sport,
+              );
+              return sportMatches.length ? (
+                <section
+                  className="match-sport"
+                  aria-label={`${divisionTitle}: ${sportNames[sport]}`}
+                  key={sport}
+                >
+                  <div className="match-sport-heading">
+                    <h4>{sportNames[sport]}</h4>
+                    <span>
+                      {sportMatches.length}{" "}
+                      {sportMatches.length === 1 ? "match" : "matches"}
+                    </span>
+                  </div>
+                  <div className="results-grid">
+                    {sportMatches.map((m) => (
+                      <MatchCard key={m.id} match={m} data={data} />
+                    ))}
+                  </div>
+                </section>
+              ) : null;
+            })}
+          </section>
+        );
+      })}
+    </section>
   );
 }
