@@ -3,8 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useSyncExternalStore } from "react";
-import { Monitor, Moon, Sun, ArrowUpRight } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Monitor, Moon, Sun, ArrowUpRight, Menu, X } from "lucide-react";
 const subscribe = () => () => {};
 export function ThemeSelector() {
   const { setTheme, theme } = useTheme();
@@ -35,8 +35,33 @@ export function ThemeSelector() {
 }
 export function Header({ season = "2026–27" }: { season?: string }) {
   const pathname = usePathname();
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const menuOpen = menuPath === pathname;
+  const headerRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    function closeOutside(event: PointerEvent) {
+      if (!headerRef.current?.contains(event.target as Node)) setMenuPath(null);
+    }
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [menuOpen]);
   return (
-    <header className="site-header">
+    <header
+      className="site-header"
+      ref={headerRef}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && menuOpen) {
+          setMenuPath(null);
+          menuButtonRef.current?.focus();
+        }
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setMenuPath(null);
+      }}
+    >
       <div className="header-inner">
         <Link href="/" className="brand">
           <Image
@@ -50,7 +75,30 @@ export function Header({ season = "2026–27" }: { season?: string }) {
             YENETA<span className="brand-sub">SCHOOL CHAMPIONSHIP</span>
           </span>
         </Link>
-        <nav className="desktop-nav" aria-label="Main navigation">
+        <div className="header-actions">
+          <span className="season-tag">SEASON {season}</span>
+          <div className="header-theme">
+            <ThemeSelector />
+          </div>
+          <button
+            ref={menuButtonRef}
+            type="button"
+            className="mobile-menu-toggle"
+            aria-label={
+              menuOpen ? "Close navigation menu" : "Open navigation menu"
+            }
+            aria-expanded={menuOpen}
+            aria-controls="primary-navigation"
+            onClick={() => setMenuPath(menuOpen ? null : pathname)}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+        <nav
+          id="primary-navigation"
+          className={`desktop-nav${menuOpen ? " nav-open" : ""}`}
+          aria-label="Main navigation"
+        >
           {[
             { href: "/", label: "Championship" },
             { href: "/teams", label: "The teams" },
@@ -65,16 +113,17 @@ export function Header({ season = "2026–27" }: { season?: string }) {
                 href={href}
                 className={active ? "nav-current" : undefined}
                 aria-current={active ? "page" : undefined}
+                onClick={() => setMenuPath(null)}
               >
                 {label}
               </Link>
             );
           })}
+          <div className="mobile-nav-settings">
+            <span>SEASON {season}</span>
+            <ThemeSelector />
+          </div>
         </nav>
-        <div className="header-actions">
-          <span className="season-tag">SEASON {season}</span>
-          <ThemeSelector />
-        </div>
       </div>
     </header>
   );

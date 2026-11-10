@@ -119,6 +119,8 @@ small {
   font-size: 11px;
 }
 .site-header {
+  position: relative;
+  z-index: 30;
   height: 92px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
@@ -155,6 +157,7 @@ small {
   margin-top: 5px;
 }
 .desktop-nav {
+  order: 1;
   display: flex;
   align-self: stretch;
   gap: 32px;
@@ -183,9 +186,18 @@ small {
   background: var(--green);
 }
 .header-actions {
+  order: 2;
   display: flex;
   gap: 24px;
   align-items: center;
+}
+.mobile-menu-toggle,
+.mobile-nav-settings {
+  display: none;
+}
+.mobile-menu-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
 }
 .season-tag {
   font-size: 10px;
@@ -1593,6 +1605,68 @@ abbr {
 @media (max-width: 900px) {
   .desktop-nav {
     display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    padding: 16px 28px 20px;
+    max-height: calc(100dvh - 92px);
+    overflow-y: auto;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 16px 24px #001b1b14;
+    gap: 4px;
+  }
+  .desktop-nav.nav-open {
+    display: grid;
+  }
+  .desktop-nav a {
+    height: auto;
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .desktop-nav a:hover,
+  .desktop-nav .nav-current {
+    background: var(--surface-2);
+    color: var(--green);
+  }
+  .desktop-nav .nav-current:after {
+    top: 12px;
+    bottom: 12px;
+    right: auto;
+    width: 3px;
+    height: auto;
+    border-radius: 3px;
+  }
+  .header-actions > .season-tag,
+  .header-theme {
+    display: none;
+  }
+  .mobile-menu-toggle {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+  }
+  .mobile-nav-settings {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid var(--line);
+    margin-top: 12px;
+    padding-top: 16px;
+  }
+  .mobile-nav-settings > span {
+    font-size: 10px;
+    letter-spacing: 1px;
   }
   .competition-grid {
     grid-template-columns: 1fr;
@@ -1663,6 +1737,10 @@ abbr {
   }
 }
 @media (max-width: 600px) {
+  .desktop-nav {
+    padding: 12px 19px 18px;
+    max-height: calc(100dvh - 76px);
+  }
   .site-header {
     height: 76px;
   }
